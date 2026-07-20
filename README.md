@@ -48,8 +48,8 @@ pytest
 
 | Этап | Ветка | Содержание | Статус |
 |------|-------|-----------|--------|
-| 1 | `stage/01-skeleton` | скелет, окно, тесты, CI | в работе |
-| 2 | `stage/02-domain-models` | Card, CardFace, Deck, прогресс | — |
+| 1 | `stage/01-skeleton` | скелет, окно, тесты, CI | готово |
+| 2 | `stage/02-domain-models` | Card, CardFace, Deck, прогресс | в работе |
 | 3 | `stage/03-storage-sqlite` | репозиторий + SQLite, импорт/экспорт | — |
 | 4 | `stage/04-srs` | алгоритм SM-2 | — |
 | 5 | `stage/05-grading` | оценка ответов (Write) | — |
