@@ -50,8 +50,8 @@ pytest
 |------|-------|-----------|--------|
 | 1 | `stage/01-skeleton` | скелет, окно, тесты, CI | готово |
 | 2 | `stage/02-domain-models` | Card, CardFace, Deck, прогресс | готово |
-| 3 | `stage/03-storage-sqlite` | репозиторий + SQLite, импорт/экспорт | в работе |
-| 4 | `stage/04-srs` | алгоритм SM-2 | — |
+| 3 | `stage/03-storage-sqlite` | репозиторий + SQLite, импорт/экспорт | готово |
+| 4 | `stage/04-srs` | алгоритм SM-2 | в работе |
 | 5 | `stage/05-grading` | оценка ответов (Write) | — |
 | 6 | `stage/06-study-modes` | карточки, Learn, Write, Test | — |
 | 7 | `stage/07-realtime-games` | Match, Gravity | — |
