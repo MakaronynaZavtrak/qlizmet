@@ -52,7 +52,7 @@ pytest
 | 2 | `stage/02-domain-models` | Card, CardFace, Deck, прогресс | готово |
 | 3 | `stage/03-storage-sqlite` | репозиторий + SQLite, импорт/экспорт | готово |
 | 4 | `stage/04-srs` | алгоритм SM-2 | готово |
-| 5 | `stage/05-grading` | оценка ответов (Write) | в работе |
-| 6 | `stage/06-study-modes` | карточки, Learn, Write, Test | — |
+| 5 | `stage/05-grading` | оценка ответов (Write) | готово |
+| 6 | `stage/06-study-modes` | карточки, Learn, Write, Test | в работе |
 | 7 | `stage/07-realtime-games` | Match, Gravity | — |
 | 8 | `stage/08-ui` | сборка интерфейса | — |
