@@ -1,4 +1,4 @@
-"""Движки режимов обучения (карточки, Learn, Write, Test)."""
+"""Движки режимов обучения (карточки, Learn, Write, Test) и игры (Match, Gravity)."""
 from qlizmet.core.study.base import (
     Direction,
     answer_face,
@@ -16,6 +16,14 @@ from qlizmet.core.study.learn import (
     LearnSession,
     LearnSummary,
     QuestionType,
+)
+from qlizmet.core.study.match import (
+    MatchFeedback,
+    MatchGame,
+    MatchOutcome,
+    MatchSummary,
+    MatchTile,
+    TileSide,
 )
 from qlizmet.core.study.test import (
     TestItemResult,
@@ -53,4 +61,10 @@ __all__ = [
     "TestQuestionType",
     "TestItemResult",
     "TestResult",
+    "MatchGame",
+    "MatchTile",
+    "TileSide",
+    "MatchOutcome",
+    "MatchFeedback",
+    "MatchSummary",
 ]
