@@ -54,5 +54,5 @@ pytest
 | 4 | `stage/04-srs` | алгоритм SM-2 | готово |
 | 5 | `stage/05-grading` | оценка ответов (Write) | готово |
 | 6 | `stage/06-study-modes` | карточки, Learn, Write, Test | готово |
-| 7 | `stage/07-realtime-games` | Match, Gravity | — |
+| 7 | `stage/07-realtime-games` | Match, Gravity | готово |
 | 8 | `stage/08-ui` | сборка интерфейса | — |

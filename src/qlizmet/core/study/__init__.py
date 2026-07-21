@@ -10,6 +10,12 @@ from qlizmet.core.study.flashcards import (
     FlashcardSession,
     FlashcardSummary,
 )
+from qlizmet.core.study.gravity import (
+    GravityFeedback,
+    GravityGame,
+    GravityPrompt,
+    GravitySummary,
+)
 from qlizmet.core.study.learn import (
     LearnFeedback,
     LearnQuestion,
@@ -67,4 +73,8 @@ __all__ = [
     "MatchOutcome",
     "MatchFeedback",
     "MatchSummary",
+    "GravityGame",
+    "GravityPrompt",
+    "GravityFeedback",
+    "GravitySummary",
 ]
