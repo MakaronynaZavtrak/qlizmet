@@ -17,6 +17,13 @@ from qlizmet.core.study.learn import (
     LearnSummary,
     QuestionType,
 )
+from qlizmet.core.study.test import (
+    TestItemResult,
+    TestQuestion,
+    TestQuestionType,
+    TestResult,
+    TestSession,
+)
 from qlizmet.core.study.write import (
     WriteFeedback,
     WritePrompt,
@@ -41,4 +48,9 @@ __all__ = [
     "LearnFeedback",
     "LearnSummary",
     "QuestionType",
+    "TestSession",
+    "TestQuestion",
+    "TestQuestionType",
+    "TestItemResult",
+    "TestResult",
 ]
