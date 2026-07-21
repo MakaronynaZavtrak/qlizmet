@@ -10,6 +10,12 @@ from qlizmet.core.study.flashcards import (
     FlashcardSession,
     FlashcardSummary,
 )
+from qlizmet.core.study.write import (
+    WriteFeedback,
+    WritePrompt,
+    WriteSession,
+    WriteSummary,
+)
 
 __all__ = [
     "Direction",
@@ -19,4 +25,8 @@ __all__ = [
     "FlashcardSession",
     "FlashcardPrompt",
     "FlashcardSummary",
+    "WriteSession",
+    "WritePrompt",
+    "WriteFeedback",
+    "WriteSummary",
 ]
