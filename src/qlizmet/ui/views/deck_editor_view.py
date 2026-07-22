@@ -33,6 +33,7 @@ class DeckEditorView(QWidget):
     """Список карточек набора с добавлением, правкой и перестановкой."""
 
     back_requested = Signal()
+    study_requested = Signal()
 
     def __init__(
         self,
@@ -49,6 +50,11 @@ class DeckEditorView(QWidget):
         back = QPushButton("← К наборам")
         back.setObjectName("backButton")
         back.clicked.connect(self.back_requested.emit)
+
+        study = QPushButton("Учить →")
+        study.setObjectName("studyButton")
+        study.clicked.connect(self.study_requested.emit)
+        self._study_button = study
 
         self._title = QLabel()
         self._title.setObjectName("deckTitle")
@@ -95,6 +101,7 @@ class DeckEditorView(QWidget):
         header = QHBoxLayout()
         header.addWidget(back)
         header.addWidget(self._title, stretch=1)
+        header.addWidget(study)
 
         layout = QVBoxLayout()
         layout.addLayout(header)
@@ -131,6 +138,7 @@ class DeckEditorView(QWidget):
         has_cards = len(deck) > 0
         self._empty_hint.setVisible(not has_cards)
         self._list.setVisible(has_cards)
+        self._study_button.setEnabled(has_cards)
         if previous:
             self.select_card(previous)
 
