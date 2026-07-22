@@ -12,6 +12,7 @@ from qlizmet.storage.serialization import (
     tags_from_json,
     tags_to_json,
 )
+from qlizmet.storage.repository import DeckSummary
 
 
 class SqliteDeckRepository:
@@ -116,6 +117,27 @@ class SqliteDeckRepository:
 
     def list_deck_ids(self) -> list[str]:
         return [r["id"] for r in self.conn.execute("SELECT id FROM decks ORDER BY title")]
+
+    def list_summaries(self) -> list[DeckSummary]:
+        """Сводка по всем наборам одним запросом, без загрузки карточек."""
+        rows = self.conn.execute(
+            """
+            SELECT d.id, d.title, d.description, COUNT(c.id) AS card_count
+            FROM decks d
+                     LEFT JOIN cards c ON c.deck_id = d.id
+            GROUP BY d.id, d.title, d.description
+            ORDER BY d.title
+            """
+        )
+        return [
+            DeckSummary(
+                id=r["id"],
+                title=r["title"],
+                description=r["description"],
+                card_count=r["card_count"],
+            )
+            for r in rows
+        ]
 
     def delete(self, deck_id: str) -> bool:
         """Удалить набор. Карточки, прогресс и история уходят каскадом."""
