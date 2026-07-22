@@ -14,15 +14,24 @@ from qlizmet.ui.views.deck_list_view import DeckListView
 from qlizmet.ui.views.flashcards_view import FlashcardsView
 from qlizmet.ui.views.mode_select_view import ModeSelectView
 from qlizmet.ui.views.write_view import WriteView
+from qlizmet.ui.views.learn_view import LearnView
+from qlizmet.ui.views.test_view import TestView
 
 PAGE_DECK_LIST = "deckListPage"
 PAGE_DECK = "deckPage"
 PAGE_MODES = "modesPage"
 PAGE_FLASHCARDS = "flashcardsPage"
 PAGE_WRITE = "writePage"
+PAGE_LEARN = "learnPage"
+PAGE_TEST = "testPage"
 
 #: Режимы, у которых уже есть экран. Остальные показываются погашенными.
-IMPLEMENTED_MODES = {StudyMode.FLASHCARDS, StudyMode.WRITE}
+IMPLEMENTED_MODES = {
+    StudyMode.FLASHCARDS,
+    StudyMode.WRITE,
+    StudyMode.LEARN,
+    StudyMode.TEST,
+}
 
 
 class MainWindow(QMainWindow):
@@ -69,12 +78,22 @@ class MainWindow(QMainWindow):
         self._write.setObjectName(PAGE_WRITE)
         self._write.back_requested.connect(self.show_modes)
 
+        self._learn = LearnView(study, media_root=media_root)
+        self._learn.setObjectName(PAGE_LEARN)
+        self._learn.back_requested.connect(self.show_modes)
+
+        self._test = TestView(study, media_root=media_root)
+        self._test.setObjectName(PAGE_TEST)
+        self._test.back_requested.connect(self.show_modes)
+
         for view in (
-            self._deck_list,
-            self._deck_editor,
-            self._modes,
-            self._flashcards,
-            self._write,
+                self._deck_list,
+                self._deck_editor,
+                self._modes,
+                self._flashcards,
+                self._write,
+                self._learn,
+                self._test,
         ):
             self._stack.addWidget(view)
 
@@ -102,6 +121,14 @@ class MainWindow(QMainWindow):
     @property
     def write(self) -> WriteView:
         return self._write
+
+    @property
+    def learn(self) -> LearnView:
+        return self._learn
+
+    @property
+    def test(self) -> TestView:
+        return self._test
 
     @property
     def current_deck_id(self) -> str | None:
@@ -146,6 +173,12 @@ class MainWindow(QMainWindow):
         elif mode is StudyMode.WRITE:
             self._write.start(cards, direction=self._direction)
             self._stack.setCurrentWidget(self._write)
+        elif mode is StudyMode.LEARN:
+            self._learn.start(cards, direction=self._direction)
+            self._stack.setCurrentWidget(self._learn)
+        elif mode is StudyMode.TEST:
+            self._test.start(cards, direction=self._direction)
+            self._stack.setCurrentWidget(self._test)
 
     def _back_to_editor(self) -> None:
         deck_id = self._deck_editor.deck_id
