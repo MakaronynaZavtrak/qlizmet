@@ -12,17 +12,22 @@ import sys
 def main() -> int:
     from PySide6.QtWidgets import QApplication
 
+    from qlizmet.app.deck_service import DeckService
     from qlizmet.app.library_service import LibraryService
-    from qlizmet.app.paths import database_path
+    from qlizmet.app.paths import database_path, media_dir
     from qlizmet.storage.sqlite.database import connect
     from qlizmet.storage.sqlite.repositories import SqliteDeckRepository
     from qlizmet.ui.main_window import MainWindow
 
     connection = connect(database_path())
-    library = LibraryService(SqliteDeckRepository(connection))
+    repository = SqliteDeckRepository(connection)
 
     app = QApplication(sys.argv)
-    window = MainWindow(library)
+    window = MainWindow(
+        LibraryService(repository),
+        DeckService(repository),
+        media_root=media_dir(),
+    )
     window.show()
     try:
         return app.exec()

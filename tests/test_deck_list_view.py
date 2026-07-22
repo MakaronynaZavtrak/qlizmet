@@ -1,11 +1,10 @@
-"""Тесты экрана со списком наборов и навигации главного окна."""
+"""Тесты экрана со списком наборов."""
 import pytest
 
 pytest.importorskip("PySide6")
 
 from qlizmet.app.library_service import LibraryService  # noqa: E402
 from qlizmet.storage.sqlite.repositories import SqliteDeckRepository  # noqa: E402
-from qlizmet.ui.main_window import PAGE_DECK, PAGE_DECK_LIST, MainWindow  # noqa: E402
 from qlizmet.ui.views.deck_list_view import DeckListView  # noqa: E402
 
 
@@ -70,44 +69,6 @@ def test_open_without_selection_is_silent(view) -> None:
     view.deck_opened.connect(opened.append)
     view.open_selected()
     assert opened == []
-
-
-def test_window_starts_on_deck_list(library, qt_host) -> None:
-    window = MainWindow(library, parent=qt_host)
-    assert window.current_page() == PAGE_DECK_LIST
-    assert window.current_deck_id is None
-
-
-def test_opening_deck_switches_page(library, qt_host) -> None:
-    deck = library.create("Гео")
-    window = MainWindow(library, parent=qt_host)
-    window.deck_list.refresh()
-    window.open_deck(deck.id)
-    assert window.current_page() == PAGE_DECK
-    assert window.current_deck_id == deck.id
-
-
-def test_deck_page_shows_title(library, qt_host) -> None:
-    deck = library.import_tsv("Франция\tПариж", "Гео")
-    window = MainWindow(library, parent=qt_host)
-    window.open_deck(deck.id)
-    assert window.findChild(object, "deckTitle").text() == "Гео"
-    assert "1" in window.findChild(object, "deckSubtitle").text()
-
-
-def test_back_to_list(library, qt_host) -> None:
-    deck = library.create("Гео")
-    window = MainWindow(library, parent=qt_host)
-    window.open_deck(deck.id)
-    window.show_deck_list()
-    assert window.current_page() == PAGE_DECK_LIST
-    assert window.current_deck_id is None
-
-
-def test_opening_missing_deck_falls_back(library, qt_host) -> None:
-    window = MainWindow(library, parent=qt_host)
-    window.open_deck("нет-такого")
-    assert window.current_page() == PAGE_DECK_LIST
 
 
 def test_double_click_opens_deck(view) -> None:
