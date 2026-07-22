@@ -16,6 +16,8 @@ from qlizmet.ui.views.mode_select_view import ModeSelectView
 from qlizmet.ui.views.write_view import WriteView
 from qlizmet.ui.views.learn_view import LearnView
 from qlizmet.ui.views.test_view import TestView
+from qlizmet.ui.views.gravity_view import GravityView
+from qlizmet.ui.views.match_view import MatchView
 
 PAGE_DECK_LIST = "deckListPage"
 PAGE_DECK = "deckPage"
@@ -24,14 +26,11 @@ PAGE_FLASHCARDS = "flashcardsPage"
 PAGE_WRITE = "writePage"
 PAGE_LEARN = "learnPage"
 PAGE_TEST = "testPage"
+PAGE_MATCH = "matchPage"
+PAGE_GRAVITY = "gravityPage"
 
-#: Режимы, у которых уже есть экран. Остальные показываются погашенными.
-IMPLEMENTED_MODES = {
-    StudyMode.FLASHCARDS,
-    StudyMode.WRITE,
-    StudyMode.LEARN,
-    StudyMode.TEST,
-}
+#: Все режимы реализованы — экраны есть у каждого.
+IMPLEMENTED_MODES = set(StudyMode)
 
 
 class MainWindow(QMainWindow):
@@ -86,6 +85,14 @@ class MainWindow(QMainWindow):
         self._test.setObjectName(PAGE_TEST)
         self._test.back_requested.connect(self.show_modes)
 
+        self._match = MatchView(media_root=media_root)
+        self._match.setObjectName(PAGE_MATCH)
+        self._match.back_requested.connect(self.show_modes)
+
+        self._gravity = GravityView(media_root=media_root)
+        self._gravity.setObjectName(PAGE_GRAVITY)
+        self._gravity.back_requested.connect(self.show_modes)
+
         for view in (
                 self._deck_list,
                 self._deck_editor,
@@ -94,6 +101,10 @@ class MainWindow(QMainWindow):
                 self._write,
                 self._learn,
                 self._test,
+                self._learn,
+                self._test,
+                self._match,
+                self._gravity,
         ):
             self._stack.addWidget(view)
 
@@ -129,6 +140,14 @@ class MainWindow(QMainWindow):
     @property
     def test(self) -> TestView:
         return self._test
+
+    @property
+    def match(self) -> MatchView:
+        return self._match
+
+    @property
+    def gravity(self) -> GravityView:
+        return self._gravity
 
     @property
     def current_deck_id(self) -> str | None:
@@ -179,6 +198,12 @@ class MainWindow(QMainWindow):
         elif mode is StudyMode.TEST:
             self._test.start(cards, direction=self._direction)
             self._stack.setCurrentWidget(self._test)
+        elif mode is StudyMode.MATCH:
+            self._match.start(cards)
+            self._stack.setCurrentWidget(self._match)
+        elif mode is StudyMode.GRAVITY:
+            self._gravity.start(cards, direction=self._direction)
+            self._stack.setCurrentWidget(self._gravity)
 
     def _back_to_editor(self) -> None:
         deck_id = self._deck_editor.deck_id
