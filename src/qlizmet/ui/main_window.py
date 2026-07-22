@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QLabel, QMainWindow
+from PySide6.QtWidgets import QLabel, QMainWindow, QWidget
 
 from qlizmet import __version__
 
@@ -10,8 +10,8 @@ from qlizmet import __version__
 class MainWindow(QMainWindow):
     """Пустое главное окно — каркас, на который навешиваются экраны режимов."""
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
         self.setWindowTitle("qlizmet")
         self.resize(900, 600)
 
