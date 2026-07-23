@@ -206,6 +206,15 @@ QProgressBar {{
 }}
 QProgressBar::chunk {{ background: {p.accent}; border-radius: {RADIUS}px; }}
 
+#metricTile, #metricTileAccent {{
+    background: {p.surface};
+    border: 1px solid {p.border};
+    border-radius: 12px;
+}}
+#metricTileAccent {{ border-color: {p.accent}; }}
+*[class="metricValue"] {{ font-size: {FONT_DISPLAY}px; font-weight: 600; }}
+#metricCaption, #legendLabel {{ color: {p.text_muted}; font-size: {FONT_CAPTION}px; }}
+
 QPushButton#modeCard {{
     background: {p.surface};
     border: 1px solid {p.border};
