@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Sequence
 
 from qlizmet.core.models import Card, CardProgress, Deck, ReviewRecord
 from qlizmet.storage.serialization import (
@@ -12,6 +13,7 @@ from qlizmet.storage.serialization import (
     tags_from_json,
     tags_to_json,
 )
+from qlizmet.storage.repository import DeckSummary
 
 
 class SqliteDeckRepository:
@@ -117,6 +119,27 @@ class SqliteDeckRepository:
     def list_deck_ids(self) -> list[str]:
         return [r["id"] for r in self.conn.execute("SELECT id FROM decks ORDER BY title")]
 
+    def list_summaries(self) -> list[DeckSummary]:
+        """Сводка по всем наборам одним запросом, без загрузки карточек."""
+        rows = self.conn.execute(
+            """
+            SELECT d.id, d.title, d.description, COUNT(c.id) AS card_count
+            FROM decks d
+                     LEFT JOIN cards c ON c.deck_id = d.id
+            GROUP BY d.id, d.title, d.description
+            ORDER BY d.title
+            """
+        )
+        return [
+            DeckSummary(
+                id=r["id"],
+                title=r["title"],
+                description=r["description"],
+                card_count=r["card_count"],
+            )
+            for r in rows
+        ]
+
     def delete(self, deck_id: str) -> bool:
         """Удалить набор. Карточки, прогресс и история уходят каскадом."""
         cur = self.conn.execute("DELETE FROM decks WHERE id=?", (deck_id,))
@@ -208,3 +231,40 @@ class SqliteProgressRepository:
             )
             for r in rows
         ]
+
+    def progress_for(self, card_ids: Sequence[str]) -> dict[str, CardProgress]:
+        """Прогресс сразу по списку карточек — одним запросом вместо N."""
+        ids = list(card_ids)
+        if not ids:
+            return {}
+        placeholders = ",".join("?" * len(ids))
+        rows = self.conn.execute(
+            f"SELECT * FROM card_progress WHERE card_id IN ({placeholders})", ids
+        )
+        return {
+            row["card_id"]: CardProgress(
+                card_id=row["card_id"],
+                ease=row["ease"],
+                interval_days=row["interval_days"],
+                repetitions=row["repetitions"],
+                lapses=row["lapses"],
+                due_at=dt_from_iso(row["due_at"]),
+                last_reviewed_at=dt_from_iso(row["last_reviewed_at"]),
+            )
+            for row in rows
+        }
+
+    def review_totals(self, card_ids: Sequence[str]) -> tuple[int, int]:
+        """Сколько всего было ответов по этим карточкам и сколько из них верных."""
+        ids = list(card_ids)
+        if not ids:
+            return (0, 0)
+        placeholders = ",".join("?" * len(ids))
+        row = self.conn.execute(
+            f"""
+            SELECT COUNT(*) AS total, COALESCE(SUM(is_correct), 0) AS correct
+            FROM reviews WHERE card_id IN ({placeholders})
+            """,
+            ids,
+        ).fetchone()
+        return (row["total"], row["correct"])

@@ -23,6 +23,12 @@ from qlizmet.core.study.learn import (
     LearnSummary,
     QuestionType,
 )
+from qlizmet.core.study.modes import (
+    StudyMode,
+    available_modes,
+    mode_availability,
+    typed_answer_count,
+)
 from qlizmet.core.study.match import (
     MatchFeedback,
     MatchGame,
@@ -77,4 +83,8 @@ __all__ = [
     "GravityPrompt",
     "GravityFeedback",
     "GravitySummary",
+    "StudyMode",
+    "available_modes",
+    "mode_availability",
+    "typed_answer_count",
 ]
