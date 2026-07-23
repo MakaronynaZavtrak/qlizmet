@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 from qlizmet.app.study_service import StudyService, grade_from_verdict
 from qlizmet.core.models import Card
 from qlizmet.core.study import Direction, WriteFeedback, WriteSession
+from qlizmet.ui.theme import GAP, PAD, set_state
 from qlizmet.ui.widgets.face_view import FaceView
 
 VERDICT_TEXT = {
@@ -81,7 +82,6 @@ class WriteView(QWidget):
         self._summary = QLabel()
         self._summary.setObjectName("summaryLabel")
         self._summary.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._summary.setStyleSheet("font-size: 18px;")
 
         self._submit_button = QPushButton("Ответить")
         self._submit_button.setObjectName("submitButton")
@@ -101,6 +101,8 @@ class WriteView(QWidget):
         buttons.addWidget(self._next_button)
 
         layout = QVBoxLayout()
+        layout.setContentsMargins(PAD, PAD, PAD, PAD)
+        layout.setSpacing(GAP)
         layout.addLayout(header)
         layout.addStretch(1)
         layout.addWidget(self._prompt)
@@ -213,9 +215,7 @@ class WriteView(QWidget):
         if showing_feedback:
             _, feedback, _ = self._pending
             self._verdict.setText(VERDICT_TEXT[feedback.result.verdict.value])
-            self._verdict.setStyleSheet(
-                "color: #1b7f4b;" if feedback.is_accepted else "color: #b3261e;"
-            )
+            set_state(self._verdict, "ok" if feedback.is_accepted else "bad")
             self._correct_answer.set_face(feedback.answer)
             self._override_button.setVisible(not feedback.is_accepted)
             return

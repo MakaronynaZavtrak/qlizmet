@@ -88,7 +88,8 @@ def test_mode_selection_emits_value(services, qt_host) -> None:
 
 @pytest.fixture
 def flashcards(qt_host) -> FlashcardsView:
-    view = FlashcardsView(parent=qt_host)
+    # анимация выключена: тесты проверяют состояние, а не время
+    view = FlashcardsView(animated=False, parent=qt_host)
     view.start(CARDS, shuffle=False)
     return view
 

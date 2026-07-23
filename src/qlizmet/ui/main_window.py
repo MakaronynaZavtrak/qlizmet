@@ -3,23 +3,25 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtWidgets import QMainWindow, QStackedWidget, QWidget
+from PySide6.QtWidgets import QApplication, QMainWindow, QStackedWidget, QWidget
 
-from qlizmet.app import StatsService
 from qlizmet.app.deck_service import DeckService
 from qlizmet.app.library_service import LibraryService
+from qlizmet.app.stats_service import StatsService
 from qlizmet.app.study_service import StudyService
+from qlizmet.app.settings import Settings, save_settings
 from qlizmet.core.study import Direction, StudyMode
+from qlizmet.ui.theme import Theme, apply_roles, apply_theme
 from qlizmet.ui.views.deck_editor_view import DeckEditorView
 from qlizmet.ui.views.deck_list_view import DeckListView
 from qlizmet.ui.views.flashcards_view import FlashcardsView
-from qlizmet.ui.views.mode_select_view import ModeSelectView
-from qlizmet.ui.views.write_view import WriteView
-from qlizmet.ui.views.learn_view import LearnView
 from qlizmet.ui.views.gravity_view import GravityView
+from qlizmet.ui.views.learn_view import LearnView
 from qlizmet.ui.views.match_view import MatchView
+from qlizmet.ui.views.mode_select_view import ModeSelectView
 from qlizmet.ui.views.quiz_view import TestView
 from qlizmet.ui.views.stats_view import StatsView
+from qlizmet.ui.views.write_view import WriteView
 
 PAGE_DECK_LIST = "deckListPage"
 PAGE_DECK = "deckPage"
@@ -47,9 +49,11 @@ class MainWindow(QMainWindow):
         stats: StatsService | None = None,
         *,
         media_root: Path | str | None = None,
+        theme: Theme = Theme.DARK,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
+        self._theme = theme
         self.setWindowTitle("qlizmet")
         self.resize(900, 600)
 
@@ -62,11 +66,14 @@ class MainWindow(QMainWindow):
         self._deck_list = DeckListView(library)
         self._deck_list.setObjectName(PAGE_DECK_LIST)
         self._deck_list.deck_opened.connect(self.open_deck)
+        self._deck_list.theme_toggle_requested.connect(self.toggle_theme)
+        self._deck_list.set_theme_label(theme.toggled().title)
 
         self._deck_editor = DeckEditorView(decks, media_root=media_root)
         self._deck_editor.setObjectName(PAGE_DECK)
         self._deck_editor.back_requested.connect(self.show_deck_list)
         self._deck_editor.study_requested.connect(self.show_modes)
+        self._deck_editor.stats_requested.connect(self.show_stats)
 
         self._modes = ModeSelectView(decks, IMPLEMENTED_MODES)
         self._modes.setObjectName(PAGE_MODES)
@@ -97,29 +104,26 @@ class MainWindow(QMainWindow):
         self._gravity.setObjectName(PAGE_GRAVITY)
         self._gravity.back_requested.connect(self.show_modes)
 
-        self._deck_editor.stats_requested.connect(self.show_stats)
-
         self._stats_view = StatsView(stats)
         self._stats_view.setObjectName(PAGE_STATS)
         self._stats_view.back_requested.connect(self._back_to_editor)
 
         for view in (
-                self._deck_list,
-                self._deck_editor,
-                self._modes,
-                self._flashcards,
-                self._write,
-                self._learn,
-                self._test,
-                self._learn,
-                self._test,
-                self._match,
-                self._gravity,
-                self._stats_view,
+            self._deck_list,
+            self._deck_editor,
+            self._modes,
+            self._flashcards,
+            self._write,
+            self._learn,
+            self._test,
+            self._match,
+            self._gravity,
+            self._stats_view,
         ):
             self._stack.addWidget(view)
 
         self.setCentralWidget(self._stack)
+        apply_roles(self)
         self.show_deck_list()
 
     # --- доступ к экранам ---
@@ -171,6 +175,28 @@ class MainWindow(QMainWindow):
     def current_page(self) -> str:
         """Имя показанного экрана (используется в тестах навигации)."""
         return self._stack.currentWidget().objectName()
+
+    @property
+    def theme(self) -> Theme:
+        return self._theme
+
+    def toggle_theme(self) -> Theme:
+        """Переключить тему, применить её и запомнить выбор."""
+        self._theme = self._theme.toggled()
+        app = QApplication.instance()
+        if app is not None:
+            apply_theme(app, self._theme)
+        self._deck_list.set_theme_label(self._theme.toggled().title)
+        save_settings(Settings(theme=self._theme.value))
+        self._refresh_current()
+        return self._theme
+
+    def _refresh_current(self) -> None:
+        """Перерисовать текущий экран: формулы рисуются картинкой и сами не обновятся."""
+        current = self._stack.currentWidget()
+        refresh = getattr(current, "refresh", None)
+        if callable(refresh):
+            refresh()
 
     # --- навигация ---
 

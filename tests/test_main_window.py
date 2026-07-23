@@ -1,4 +1,4 @@
-"""Дымовые тесты главного окна. Работают headless через offscreen-платформу."""
+"""Тесты главного окна и навигации между экранами (headless)."""
 import pytest
 
 pytest.importorskip("PySide6")
@@ -8,6 +8,7 @@ from qlizmet.app.deck_service import DeckService  # noqa: E402
 from qlizmet.app.library_service import LibraryService  # noqa: E402
 from qlizmet.storage.sqlite.repositories import SqliteDeckRepository  # noqa: E402
 from qlizmet.ui.main_window import PAGE_DECK, PAGE_DECK_LIST, MainWindow  # noqa: E402
+from qlizmet.ui.widgets.list_delegate import SUBTITLE_ROLE  # noqa: E402
 
 
 @pytest.fixture
@@ -66,4 +67,5 @@ def test_deck_list_reflects_cards_added_in_editor(window, library) -> None:
     window.open_deck(deck.id)
     window.deck_editor.add_card_from_markup("Франция", "Париж")
     window.show_deck_list()
-    assert "1" in window.deck_list.findChild(object, "deckList").item(0).text()
+    subtitle = window.deck_list.findChild(object, "deckList").item(0).data(SUBTITLE_ROLE)
+    assert "1" in subtitle

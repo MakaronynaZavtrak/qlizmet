@@ -17,6 +17,7 @@ from PySide6.QtWidgets import QLabel, QSizePolicy, QVBoxLayout, QWidget
 
 from qlizmet.core.models import CardFace, ImageBlock, LatexBlock, TextBlock
 from qlizmet.ui.latex import LatexRenderError, render_latex_png
+from qlizmet.ui.theme import current_palette
 
 DEFAULT_MAX_IMAGE_WIDTH = 420
 
@@ -98,7 +99,12 @@ class FaceView(QWidget):
 
     def _latex_widget(self, block: LatexBlock) -> QLabel:
         try:
-            png = render_latex_png(block.latex, font_size=self._font_size)
+            # цвет берём из активной темы: на тёмном фоне чёрная формула не видна
+            png = render_latex_png(
+                block.latex,
+                font_size=self._font_size,
+                color=current_palette().text,
+            )
         except LatexRenderError:
             # показываем исходник, чтобы автор карточки увидел, что чинить
             return self._placeholder(block.latex, "faceBlockLatexError")
@@ -137,7 +143,6 @@ class FaceView(QWidget):
         label.setObjectName(object_name)
         label.setWordWrap(True)
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        label.setStyleSheet("color: #b3261e; font-style: italic;")
         return label
 
     def _resolve(self, path: str) -> Path:

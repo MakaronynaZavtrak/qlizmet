@@ -24,7 +24,9 @@ from PySide6.QtWidgets import (
 from qlizmet.app.deck_service import DeckService
 from qlizmet.core.markup import face_from_markup, face_preview
 from qlizmet.core.models import CardFace
+from qlizmet.ui.theme import GAP, PAD
 from qlizmet.ui.views.card_editor_dialog import CardEditorDialog
+from qlizmet.ui.widgets.list_delegate import SUBTITLE_ROLE, TwoLineDelegate
 
 CARD_ID_ROLE = Qt.ItemDataRole.UserRole
 
@@ -63,16 +65,15 @@ class DeckEditorView(QWidget):
 
         self._title = QLabel()
         self._title.setObjectName("deckTitle")
-        self._title.setStyleSheet("font-size: 20px; font-weight: 600;")
 
         self._empty_hint = QLabel("В наборе пока нет карточек — добавьте первую.")
         self._empty_hint.setObjectName("emptyHint")
         self._empty_hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._empty_hint.setStyleSheet("color: #666;")
 
         self._list = QListWidget()
         self._list.setObjectName("cardList")
         self._list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self._list.setItemDelegate(TwoLineDelegate(self._list))
         self._list.itemDoubleClicked.connect(lambda _: self._edit_selected_via_dialog())
 
         add_button = QPushButton("Добавить")
@@ -110,6 +111,8 @@ class DeckEditorView(QWidget):
         header.addWidget(study)
 
         layout = QVBoxLayout()
+        layout.setContentsMargins(PAD, PAD, PAD, PAD)
+        layout.setSpacing(GAP)
         layout.addLayout(header)
         layout.addWidget(self._empty_hint)
         layout.addWidget(self._list, stretch=1)
@@ -135,10 +138,9 @@ class DeckEditorView(QWidget):
         deck = self._decks.get(self._deck_id)
         self._title.setText(deck.title)
         for card in deck.cards:
-            item = QListWidgetItem(
-                f"{face_preview(card.front)}  →  {face_preview(card.back)}"
-            )
+            item = QListWidgetItem(face_preview(card.front))
             item.setData(CARD_ID_ROLE, card.id)
+            item.setData(SUBTITLE_ROLE, face_preview(card.back))
             self._list.addItem(item)
 
         has_cards = len(deck) > 0

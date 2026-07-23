@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
 
 from qlizmet.core.models import Card
 from qlizmet.core.study import Direction, GravityGame
+from qlizmet.ui.theme import GAP, PAD, set_state
 from qlizmet.ui.widgets.face_view import FaceView
 
 TICK_MS = 250
@@ -101,9 +102,10 @@ class GravityView(QWidget):
         self._summary = QLabel()
         self._summary.setObjectName("summaryLabel")
         self._summary.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._summary.setStyleSheet("font-size: 18px;")
 
         layout = QVBoxLayout()
+        layout.setContentsMargins(PAD, PAD, PAD, PAD)
+        layout.setSpacing(GAP)
         layout.addLayout(header)
         layout.addWidget(self._fall_area, stretch=1)
         layout.addWidget(self._flash)
@@ -160,7 +162,7 @@ class GravityView(QWidget):
             self._game.miss()
             self._step = 0
             self._flash.setText("Не успел!")
-            self._flash.setStyleSheet("color: #b3261e;")
+            set_state(self._flash, "bad")
         self._refresh()
 
     def submit(self) -> None:
@@ -174,9 +176,7 @@ class GravityView(QWidget):
             "Верно!" if feedback.is_correct
             else f"Неверно: {feedback.correct_answer.plain_text}"
         )
-        self._flash.setStyleSheet(
-            "color: #1b7f4b;" if feedback.is_correct else "color: #b3261e;"
-        )
+        set_state(self._flash, "ok" if feedback.is_correct else "bad")
         self._refresh()
 
     def status_text(self) -> str:

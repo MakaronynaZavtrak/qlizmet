@@ -10,6 +10,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -20,6 +21,8 @@ from PySide6.QtWidgets import (
 
 from qlizmet.core.models import Card
 from qlizmet.core.study import Direction, FlashcardSession
+from qlizmet.ui.theme import GAP, PAD
+from qlizmet.ui.widgets.card_surface import CardSurface
 from qlizmet.ui.widgets.face_view import FaceView
 
 
@@ -32,6 +35,7 @@ class FlashcardsView(QWidget):
         self,
         *,
         media_root: Path | str | None = None,
+        animated: bool = True,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
@@ -52,16 +56,19 @@ class FlashcardsView(QWidget):
 
         self._face = FaceView(media_root=media_root)
         self._face.setObjectName("cardFace")
+        self._card = CardSurface(self._face, animated=animated)
+
+        flip_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Space), self)
+        flip_shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
+        flip_shortcut.activated.connect(self.flip)
 
         self._side_label = QLabel()
         self._side_label.setObjectName("sideLabel")
         self._side_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._side_label.setStyleSheet("color: #666;")
 
         self._summary = QLabel()
         self._summary.setObjectName("summaryLabel")
         self._summary.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._summary.setStyleSheet("font-size: 18px;")
         self._summary.setVisible(False)
 
         self._flip_button = QPushButton("Показать ответ")
@@ -82,10 +89,12 @@ class FlashcardsView(QWidget):
         buttons.addWidget(self._know_button)
 
         layout = QVBoxLayout()
+        layout.setContentsMargins(PAD, PAD, PAD, PAD)
+        layout.setSpacing(GAP)
         layout.addLayout(header)
         layout.addStretch(1)
         layout.addWidget(self._side_label)
-        layout.addWidget(self._face)
+        layout.addWidget(self._card, alignment=Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self._summary)
         layout.addStretch(1)
         layout.addLayout(buttons)
@@ -113,16 +122,18 @@ class FlashcardsView(QWidget):
         return self._answer_shown
 
     def flip(self) -> None:
+        """Перевернуть карточку. Состояние меняется сразу, анимация — украшение."""
         if self.is_finished:
             return
         self._answer_shown = not self._answer_shown
-        self._refresh()
+        self._card.flip(self._refresh)
 
     def mark(self, known: bool) -> None:
         if self.is_finished:
             return
         self._session.mark(known)
         self._answer_shown = False
+        self._card.stop_animation()
         self._refresh()
 
     def progress_text(self) -> str:
@@ -137,7 +148,7 @@ class FlashcardsView(QWidget):
         prompt = self._session.current() if self._session else None
         finished = prompt is None
 
-        self._face.setVisible(not finished)
+        self._card.setVisible(not finished)
         self._side_label.setVisible(not finished)
         self._summary.setVisible(finished)
         for button in (self._flip_button, self._know_button, self._dont_know_button):

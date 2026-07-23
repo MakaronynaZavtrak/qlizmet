@@ -67,7 +67,6 @@ class CardEditorDialog(QDialog):
         hint = QLabel(MARKUP_HINT)
         hint.setObjectName("markupHint")
         hint.setWordWrap(True)
-        hint.setStyleSheet("color: #666;")
 
         buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
@@ -88,6 +87,8 @@ class CardEditorDialog(QDialog):
 
         if card is not None:
             self.set_card(card)
+
+    # --- содержимое ---
 
     def set_card(self, card: Card) -> None:
         self._front_edit.setPlainText(face_to_markup(card.front))
@@ -111,6 +112,8 @@ class CardEditorDialog(QDialog):
 
     def is_empty(self) -> bool:
         return self.front_face().is_empty and self.back_face().is_empty
+
+    # --- внутреннее ---
 
     def _side_box(self, title: str, edit: QPlainTextEdit, preview: FaceView) -> QGroupBox:
         box = QGroupBox(title)
