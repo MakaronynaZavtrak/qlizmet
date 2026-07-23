@@ -206,6 +206,20 @@ QProgressBar {{
 }}
 QProgressBar::chunk {{ background: {p.accent}; border-radius: {RADIUS}px; }}
 
+QPushButton#modeCard {{
+    background: {p.surface};
+    border: 1px solid {p.border};
+    border-radius: 12px;
+    padding: 0;
+    text-align: left;
+}}
+QPushButton#modeCard:hover {{ border-color: {p.accent}; background: {p.surface_alt}; }}
+QPushButton#modeCard:focus {{ border-color: {p.accent}; }}
+QPushButton#modeCard:disabled {{ background: {p.window}; border-color: {p.border}; }}
+#modeCardTitle {{ font-size: {FONT_SUBTITLE}px; font-weight: 600; }}
+#modeCardHint {{ color: {p.text_muted}; font-size: {FONT_CAPTION}px; }}
+QPushButton#modeCard:disabled #modeCardTitle {{ color: {p.text_muted}; }}
+
 #cardSurface {{
     background: {p.surface};
     border: 1px solid {p.border};

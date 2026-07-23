@@ -190,6 +190,7 @@ class MainWindow(QMainWindow):
         self._deck_list.set_next_theme(self._theme.toggled())
         save_settings(Settings(theme=self._theme.value))
         refresh_icons(self)  # иконки нарисованы цветом старой темы — перерисуем
+        self._modes.refresh_icons()  # у карточек режимов иконка своя, картинкой
         self._refresh_current()
         return self._theme
 
