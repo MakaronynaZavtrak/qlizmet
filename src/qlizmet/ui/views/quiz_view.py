@@ -73,7 +73,6 @@ class TestView(QWidget):
         self._kind_label = QLabel()
         self._kind_label.setObjectName("kindLabel")
         self._kind_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._kind_label.setStyleSheet("color: #666;")
 
         self._prompt = FaceView(media_root=media_root)
         self._prompt.setObjectName("promptFace")
@@ -125,7 +124,6 @@ class TestView(QWidget):
         self._score = QLabel()
         self._score.setObjectName("scoreLabel")
         self._score.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._score.setStyleSheet("font-size: 18px;")
 
         self._mistakes = QLabel()
         self._mistakes.setObjectName("mistakesLabel")

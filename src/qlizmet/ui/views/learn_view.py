@@ -32,6 +32,7 @@ from qlizmet.core.study import (
     LearnSession,
     QuestionType,
 )
+from qlizmet.ui.theme import set_state
 from qlizmet.ui.widgets.face_view import FaceView
 
 MAX_CHOICES = 4
@@ -108,7 +109,6 @@ class LearnView(QWidget):
         self._summary = QLabel()
         self._summary.setObjectName("summaryLabel")
         self._summary.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._summary.setStyleSheet("font-size: 18px;")
 
         layout = QVBoxLayout()
         layout.addLayout(header)
@@ -259,9 +259,7 @@ class LearnView(QWidget):
         if showing_feedback:
             feedback = self._pending
             self._verdict.setText("Верно!" if feedback.is_correct else "Неверно")
-            self._verdict.setStyleSheet(
-                "color: #1b7f4b;" if feedback.is_correct else "color: #b3261e;"
-            )
+            set_state(self._verdict, "ok" if feedback.is_correct else "bad")
             self._correct_answer.set_face(feedback.correct_answer)
             return
 

@@ -46,7 +46,6 @@ class ModeSelectView(QWidget):
 
         self._title = QLabel()
         self._title.setObjectName("deckTitle")
-        self._title.setStyleSheet("font-size: 20px; font-weight: 600;")
 
         header = QHBoxLayout()
         header.addWidget(back)

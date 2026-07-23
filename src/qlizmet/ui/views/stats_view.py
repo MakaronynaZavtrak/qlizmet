@@ -41,7 +41,6 @@ class StatsView(QWidget):
 
         title = QLabel("Статистика")
         title.setObjectName("screenTitle")
-        title.setStyleSheet("font-size: 20px; font-weight: 600;")
 
         header = QHBoxLayout()
         header.addWidget(back)
@@ -77,7 +76,6 @@ class StatsView(QWidget):
         self._hint.setObjectName("hintLabel")
         self._hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._hint.setWordWrap(True)
-        self._hint.setStyleSheet("color: #666;")
 
         layout = QVBoxLayout()
         layout.addLayout(header)

@@ -56,12 +56,10 @@ class FlashcardsView(QWidget):
         self._side_label = QLabel()
         self._side_label.setObjectName("sideLabel")
         self._side_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._side_label.setStyleSheet("color: #666;")
 
         self._summary = QLabel()
         self._summary.setObjectName("summaryLabel")
         self._summary.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._summary.setStyleSheet("font-size: 18px;")
         self._summary.setVisible(False)
 
         self._flip_button = QPushButton("Показать ответ")

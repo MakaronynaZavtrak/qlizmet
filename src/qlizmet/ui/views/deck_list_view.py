@@ -30,6 +30,7 @@ class DeckListView(QWidget):
     """Список наборов пользователя."""
 
     deck_opened = Signal(str)
+    theme_toggle_requested = Signal()
 
     def __init__(self, library: LibraryService, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -37,12 +38,14 @@ class DeckListView(QWidget):
 
         title = QLabel("Мои наборы")
         title.setObjectName("screenTitle")
-        title.setStyleSheet("font-size: 20px; font-weight: 600;")
+
+        self._theme_button = QPushButton()
+        self._theme_button.setObjectName("themeButton")
+        self._theme_button.clicked.connect(self.theme_toggle_requested.emit)
 
         self._empty_hint = QLabel("Пока нет ни одного набора — создайте первый.")
         self._empty_hint.setObjectName("emptyHint")
         self._empty_hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._empty_hint.setStyleSheet("color: #666;")
 
         self._list = QListWidget()
         self._list.setObjectName("deckList")
@@ -72,8 +75,12 @@ class DeckListView(QWidget):
         buttons.addWidget(delete_button)
         buttons.addWidget(open_button)
 
+        header = QHBoxLayout()
+        header.addWidget(title, stretch=1)
+        header.addWidget(self._theme_button)
+
         layout = QVBoxLayout()
-        layout.addWidget(title)
+        layout.addLayout(header)
         layout.addWidget(self._empty_hint)
         layout.addWidget(self._list, stretch=1)
         layout.addLayout(buttons)
@@ -82,6 +89,13 @@ class DeckListView(QWidget):
         self.refresh()
 
     # --- данные ---
+
+    def set_theme_label(self, next_theme_title: str) -> None:
+        """Подписать кнопку тем, на что она переключит."""
+        self._theme_button.setText(f"{next_theme_title} тема")
+
+    def theme_label(self) -> str:
+        return self._theme_button.text()
 
     def refresh(self) -> None:
         """Перечитать наборы из хранилища."""

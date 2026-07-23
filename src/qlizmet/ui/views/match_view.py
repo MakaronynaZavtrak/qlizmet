@@ -26,14 +26,15 @@ from PySide6.QtWidgets import (
 from qlizmet.core.markup import face_preview
 from qlizmet.core.models import Card
 from qlizmet.core.study import MatchGame, MatchOutcome
+from qlizmet.ui.theme import set_state
 
 TICK_MS = 100
 COLUMNS = 4
 DEFAULT_PAIRS = 6
 
-STYLE_IDLE = ""
-STYLE_SELECTED = "background: #d7e3ff; border: 2px solid #3b6fd4;"
-STYLE_WRONG = "background: #ffdad6; border: 2px solid #b3261e;"
+STATE_IDLE = ""
+STATE_SELECTED = "selected"
+STATE_WRONG = "wrong"
 
 
 class MatchView(QWidget):
@@ -76,7 +77,6 @@ class MatchView(QWidget):
         self._summary = QLabel()
         self._summary.setObjectName("summaryLabel")
         self._summary.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._summary.setStyleSheet("font-size: 18px;")
 
         layout = QVBoxLayout()
         layout.addLayout(header)
@@ -130,7 +130,7 @@ class MatchView(QWidget):
         if feedback.outcome is MatchOutcome.MISMATCH:
             # подсветим обе плитки красным и погасим через мгновение
             for wrong_id in feedback.tiles:
-                self._style(wrong_id, STYLE_WRONG)
+                self._style(wrong_id, STATE_WRONG)
             QTimer.singleShot(400, self._clear_highlight)
         elif feedback.outcome is MatchOutcome.MATCH:
             self._rebuild_grid()
@@ -174,16 +174,15 @@ class MatchView(QWidget):
             self._buttons[tile.id] = button
             grid.addWidget(button, index // COLUMNS, index % COLUMNS)
 
-    def _style(self, tile_id: str, style: str) -> None:
+    def _style(self, tile_id: str, state: str) -> None:
         button = self._buttons.get(tile_id)
         if button is not None:
-            button.setStyleSheet(style)
+            set_state(button, state)
 
     def _clear_highlight(self) -> None:
+        selected = self.selected_tile()
         for tile_id, button in self._buttons.items():
-            button.setStyleSheet(
-                STYLE_SELECTED if tile_id == self.selected_tile() else STYLE_IDLE
-            )
+            set_state(button, STATE_SELECTED if tile_id == selected else STATE_IDLE)
 
     def _update_clock(self) -> None:
         self._clock.setText(f"{self.elapsed_seconds:.1f} с")

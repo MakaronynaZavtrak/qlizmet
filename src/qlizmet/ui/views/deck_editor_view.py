@@ -63,12 +63,10 @@ class DeckEditorView(QWidget):
 
         self._title = QLabel()
         self._title.setObjectName("deckTitle")
-        self._title.setStyleSheet("font-size: 20px; font-weight: 600;")
 
         self._empty_hint = QLabel("В наборе пока нет карточек — добавьте первую.")
         self._empty_hint.setObjectName("emptyHint")
         self._empty_hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._empty_hint.setStyleSheet("color: #666;")
 
         self._list = QListWidget()
         self._list.setObjectName("cardList")
