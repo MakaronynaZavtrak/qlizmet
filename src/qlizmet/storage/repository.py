@@ -6,6 +6,7 @@
 """
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
@@ -48,3 +49,7 @@ class ProgressRepository(Protocol):
     def add_review(self, record: ReviewRecord) -> None: ...
 
     def reviews_for(self, card_id: str) -> list[ReviewRecord]: ...
+
+    def progress_for(self, card_ids: Sequence[str]) -> dict[str, CardProgress]: ...
+
+    def review_totals(self, card_ids: Sequence[str]) -> tuple[int, int]: ...

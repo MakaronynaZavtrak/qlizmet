@@ -5,6 +5,7 @@ from pathlib import Path
 
 from PySide6.QtWidgets import QMainWindow, QStackedWidget, QWidget
 
+from qlizmet.app import StatsService
 from qlizmet.app.deck_service import DeckService
 from qlizmet.app.library_service import LibraryService
 from qlizmet.app.study_service import StudyService
@@ -15,9 +16,10 @@ from qlizmet.ui.views.flashcards_view import FlashcardsView
 from qlizmet.ui.views.mode_select_view import ModeSelectView
 from qlizmet.ui.views.write_view import WriteView
 from qlizmet.ui.views.learn_view import LearnView
-from qlizmet.ui.views.test_view import TestView
 from qlizmet.ui.views.gravity_view import GravityView
 from qlizmet.ui.views.match_view import MatchView
+from qlizmet.ui.views.quiz_view import TestView
+from qlizmet.ui.views.stats_view import StatsView
 
 PAGE_DECK_LIST = "deckListPage"
 PAGE_DECK = "deckPage"
@@ -28,6 +30,7 @@ PAGE_LEARN = "learnPage"
 PAGE_TEST = "testPage"
 PAGE_MATCH = "matchPage"
 PAGE_GRAVITY = "gravityPage"
+PAGE_STATS = "statsPage"
 
 #: Все режимы реализованы — экраны есть у каждого.
 IMPLEMENTED_MODES = set(StudyMode)
@@ -41,6 +44,7 @@ class MainWindow(QMainWindow):
         library: LibraryService,
         decks: DeckService,
         study: StudyService | None = None,
+        stats: StatsService | None = None,
         *,
         media_root: Path | str | None = None,
         parent: QWidget | None = None,
@@ -93,6 +97,12 @@ class MainWindow(QMainWindow):
         self._gravity.setObjectName(PAGE_GRAVITY)
         self._gravity.back_requested.connect(self.show_modes)
 
+        self._deck_editor.stats_requested.connect(self.show_stats)
+
+        self._stats_view = StatsView(stats)
+        self._stats_view.setObjectName(PAGE_STATS)
+        self._stats_view.back_requested.connect(self._back_to_editor)
+
         for view in (
                 self._deck_list,
                 self._deck_editor,
@@ -105,6 +115,7 @@ class MainWindow(QMainWindow):
                 self._test,
                 self._match,
                 self._gravity,
+                self._stats_view,
         ):
             self._stack.addWidget(view)
 
@@ -150,6 +161,10 @@ class MainWindow(QMainWindow):
         return self._gravity
 
     @property
+    def stats_view(self) -> StatsView:
+        return self._stats_view
+
+    @property
     def current_deck_id(self) -> str | None:
         return self._deck_editor.deck_id if self.current_page() != PAGE_DECK_LIST else None
 
@@ -169,6 +184,13 @@ class MainWindow(QMainWindow):
             return
         self._deck_editor.load(deck_id)
         self._stack.setCurrentWidget(self._deck_editor)
+
+    def show_stats(self) -> None:
+        deck_id = self._deck_editor.deck_id
+        if deck_id is None:
+            return
+        self._stats_view.load(deck_id)
+        self._stack.setCurrentWidget(self._stats_view)
 
     def show_modes(self) -> None:
         deck_id = self._deck_editor.deck_id

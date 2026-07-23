@@ -34,6 +34,7 @@ class DeckEditorView(QWidget):
 
     back_requested = Signal()
     study_requested = Signal()
+    stats_requested = Signal()
 
     def __init__(
         self,
@@ -50,6 +51,10 @@ class DeckEditorView(QWidget):
         back = QPushButton("← К наборам")
         back.setObjectName("backButton")
         back.clicked.connect(self.back_requested.emit)
+
+        stats = QPushButton("Статистика")
+        stats.setObjectName("statsButton")
+        stats.clicked.connect(self.stats_requested.emit)
 
         study = QPushButton("Учить →")
         study.setObjectName("studyButton")
@@ -101,6 +106,7 @@ class DeckEditorView(QWidget):
         header = QHBoxLayout()
         header.addWidget(back)
         header.addWidget(self._title, stretch=1)
+        header.addWidget(stats)
         header.addWidget(study)
 
         layout = QVBoxLayout()

@@ -14,8 +14,9 @@ def main() -> int:
 
     from qlizmet.app.deck_service import DeckService
     from qlizmet.app.library_service import LibraryService
-    from qlizmet.app.study_service import StudyService
     from qlizmet.app.paths import database_path, media_dir
+    from qlizmet.app.stats_service import StatsService
+    from qlizmet.app.study_service import StudyService
     from qlizmet.storage.sqlite.database import connect
     from qlizmet.storage.sqlite.repositories import (
         SqliteDeckRepository,
@@ -25,12 +26,14 @@ def main() -> int:
 
     connection = connect(database_path())
     repository = SqliteDeckRepository(connection)
+    progress = SqliteProgressRepository(connection)
 
     app = QApplication(sys.argv)
     window = MainWindow(
         LibraryService(repository),
         DeckService(repository),
-        StudyService(SqliteProgressRepository(connection)),
+        StudyService(progress),
+        StatsService(repository, progress),
         media_root=media_dir(),
     )
     window.show()

@@ -2,6 +2,7 @@
 from qlizmet.app.deck_service import DeckService
 from qlizmet.app.library_service import LibraryService
 from qlizmet.app.paths import app_data_dir, database_path, media_dir
+from qlizmet.app.stats_service import StatsService
 from qlizmet.app.study_service import StudyService, grade_from_verdict
 
 __all__ = [
@@ -9,6 +10,7 @@ __all__ = [
     "grade_from_verdict",
     "LibraryService",
     "DeckService",
+    "StatsService",
     "app_data_dir",
     "database_path",
     "media_dir",

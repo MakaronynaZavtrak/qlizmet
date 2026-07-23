@@ -13,7 +13,7 @@ from qlizmet.storage.sqlite.repositories import (  # noqa: E402
     SqliteProgressRepository,
 )
 from qlizmet.ui.views.learn_view import LearnView  # noqa: E402
-from qlizmet.ui.views.test_view import TestView  # noqa: E402
+from qlizmet.ui.views.quiz_view import TestView  # noqa: E402
 
 
 def _card(front: str, back: str) -> Card:
