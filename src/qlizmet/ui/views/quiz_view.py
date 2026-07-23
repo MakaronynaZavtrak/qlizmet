@@ -32,6 +32,7 @@ from qlizmet.core.study import (
     TestResult,
     TestSession,
 )
+from qlizmet.ui.theme import GAP, PAD
 from qlizmet.ui.widgets.face_view import FaceView
 
 MAX_CHOICES = 4
@@ -131,6 +132,8 @@ class TestView(QWidget):
         self._mistakes.setWordWrap(True)
 
         layout = QVBoxLayout()
+        layout.setContentsMargins(PAD, PAD, PAD, PAD)
+        layout.setSpacing(GAP)
         layout.addLayout(header)
         layout.addStretch(1)
         layout.addWidget(self._kind_label)

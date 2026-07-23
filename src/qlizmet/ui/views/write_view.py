@@ -25,7 +25,7 @@ from PySide6.QtWidgets import (
 from qlizmet.app.study_service import StudyService, grade_from_verdict
 from qlizmet.core.models import Card
 from qlizmet.core.study import Direction, WriteFeedback, WriteSession
-from qlizmet.ui.theme import set_state
+from qlizmet.ui.theme import GAP, PAD, set_state
 from qlizmet.ui.widgets.face_view import FaceView
 
 VERDICT_TEXT = {
@@ -101,6 +101,8 @@ class WriteView(QWidget):
         buttons.addWidget(self._next_button)
 
         layout = QVBoxLayout()
+        layout.setContentsMargins(PAD, PAD, PAD, PAD)
+        layout.setSpacing(GAP)
         layout.addLayout(header)
         layout.addStretch(1)
         layout.addWidget(self._prompt)

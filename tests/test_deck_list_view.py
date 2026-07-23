@@ -1,4 +1,4 @@
-"""Тесты экрана со списком наборов."""
+"""Тесты экрана со списком наборов и навигации главного окна."""
 import pytest
 
 pytest.importorskip("PySide6")
@@ -6,6 +6,13 @@ pytest.importorskip("PySide6")
 from qlizmet.app.library_service import LibraryService  # noqa: E402
 from qlizmet.storage.sqlite.repositories import SqliteDeckRepository  # noqa: E402
 from qlizmet.ui.views.deck_list_view import DeckListView  # noqa: E402
+from qlizmet.ui.widgets.list_delegate import SUBTITLE_ROLE  # noqa: E402
+
+
+def _row(view, index: int = 0) -> tuple[str, str]:
+    """Заголовок и подзаголовок строки списка."""
+    item = view.findChild(object, "deckList").item(index)
+    return item.text(), item.data(SUBTITLE_ROLE)
 
 
 @pytest.fixture
@@ -31,9 +38,15 @@ def test_created_deck_appears(view) -> None:
 
 def test_list_shows_title_and_count(view) -> None:
     view.import_deck("Франция\tПариж\nИталия\tРим", "Гео")
-    text = view.findChild(object, "deckList").item(0).text()
-    assert "Гео" in text
-    assert "2" in text
+    title, subtitle = _row(view)
+    assert title == "Гео"
+    assert "2" in subtitle
+
+
+def test_list_subtitle_includes_description(view) -> None:
+    view.create_deck("Гео", "столицы Европы")
+    _, subtitle = _row(view)
+    assert "столицы Европы" in subtitle
 
 
 def test_refresh_picks_up_external_changes(view, library) -> None:

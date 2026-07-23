@@ -32,7 +32,7 @@ from qlizmet.core.study import (
     LearnSession,
     QuestionType,
 )
-from qlizmet.ui.theme import set_state
+from qlizmet.ui.theme import GAP, PAD, set_state
 from qlizmet.ui.widgets.face_view import FaceView
 
 MAX_CHOICES = 4
@@ -111,6 +111,8 @@ class LearnView(QWidget):
         self._summary.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         layout = QVBoxLayout()
+        layout.setContentsMargins(PAD, PAD, PAD, PAD)
+        layout.setSpacing(GAP)
         layout.addLayout(header)
         layout.addStretch(1)
         layout.addWidget(self._prompt)

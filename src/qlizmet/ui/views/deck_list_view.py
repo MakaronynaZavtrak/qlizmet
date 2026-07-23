@@ -22,6 +22,8 @@ from PySide6.QtWidgets import (
 )
 
 from qlizmet.app.library_service import LibraryService
+from qlizmet.ui.theme import GAP, PAD
+from qlizmet.ui.widgets.list_delegate import SUBTITLE_ROLE, TwoLineDelegate
 
 DECK_ID_ROLE = Qt.ItemDataRole.UserRole
 
@@ -50,6 +52,7 @@ class DeckListView(QWidget):
         self._list = QListWidget()
         self._list.setObjectName("deckList")
         self._list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self._list.setItemDelegate(TwoLineDelegate(self._list))
         self._list.itemDoubleClicked.connect(lambda _: self.open_selected())
 
         create_button = QPushButton("Создать")
@@ -80,6 +83,8 @@ class DeckListView(QWidget):
         header.addWidget(self._theme_button)
 
         layout = QVBoxLayout()
+        layout.setContentsMargins(PAD, PAD, PAD, PAD)
+        layout.setSpacing(GAP)
         layout.addLayout(header)
         layout.addWidget(self._empty_hint)
         layout.addWidget(self._list, stretch=1)
@@ -103,8 +108,9 @@ class DeckListView(QWidget):
         self._list.clear()
         summaries = self._library.summaries()
         for summary in summaries:
-            item = QListWidgetItem(f"{summary.title}  ·  {summary.card_count} карт.")
+            item = QListWidgetItem(summary.title)
             item.setData(DECK_ID_ROLE, summary.id)
+            item.setData(SUBTITLE_ROLE, _deck_subtitle(summary))
             if summary.description:
                 item.setToolTip(summary.description)
             self._list.addItem(item)
@@ -183,3 +189,9 @@ class DeckListView(QWidget):
         )
         if answer is QMessageBox.StandardButton.Yes:
             self.delete_deck(deck_id)
+
+
+def _deck_subtitle(summary) -> str:
+    """Вторая строка набора: количество карточек и описание, если оно есть."""
+    cards = f"{summary.card_count} карт."
+    return f"{cards} · {summary.description}" if summary.description else cards

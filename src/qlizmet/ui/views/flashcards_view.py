@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 
 from qlizmet.core.models import Card
 from qlizmet.core.study import Direction, FlashcardSession
+from qlizmet.ui.theme import GAP, PAD
 from qlizmet.ui.widgets.face_view import FaceView
 
 
@@ -80,6 +81,8 @@ class FlashcardsView(QWidget):
         buttons.addWidget(self._know_button)
 
         layout = QVBoxLayout()
+        layout.setContentsMargins(PAD, PAD, PAD, PAD)
+        layout.setSpacing(GAP)
         layout.addLayout(header)
         layout.addStretch(1)
         layout.addWidget(self._side_label)

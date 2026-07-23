@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
 
 from qlizmet.app.stats_service import StatsService
 from qlizmet.core.stats import MATURE_INTERVAL_DAYS, DeckStats
+from qlizmet.ui.theme import GAP, PAD
 
 
 class StatsView(QWidget):
@@ -78,6 +79,8 @@ class StatsView(QWidget):
         self._hint.setWordWrap(True)
 
         layout = QVBoxLayout()
+        layout.setContentsMargins(PAD, PAD, PAD, PAD)
+        layout.setSpacing(GAP)
         layout.addLayout(header)
         layout.addStretch(1)
         layout.addWidget(self._bar)

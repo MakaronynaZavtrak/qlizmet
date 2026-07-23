@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
 )
 
 from qlizmet.app.deck_service import DeckService
+from qlizmet.ui.theme import GAP, PAD
 from qlizmet.core.study import Direction, StudyMode, mode_availability
 
 NOT_READY_HINT = "появится в следующих версиях"
@@ -64,6 +65,8 @@ class ModeSelectView(QWidget):
             grid.addWidget(button, index // 2, index % 2)
 
         layout = QVBoxLayout()
+        layout.setContentsMargins(PAD, PAD, PAD, PAD)
+        layout.setSpacing(GAP)
         layout.addLayout(header)
         layout.addStretch(1)
         layout.addLayout(grid)

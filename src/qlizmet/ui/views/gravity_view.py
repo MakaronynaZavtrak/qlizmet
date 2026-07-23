@@ -24,7 +24,7 @@ from PySide6.QtWidgets import (
 
 from qlizmet.core.models import Card
 from qlizmet.core.study import Direction, GravityGame
-from qlizmet.ui.theme import set_state
+from qlizmet.ui.theme import GAP, PAD, set_state
 from qlizmet.ui.widgets.face_view import FaceView
 
 TICK_MS = 250
@@ -104,6 +104,8 @@ class GravityView(QWidget):
         self._summary.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         layout = QVBoxLayout()
+        layout.setContentsMargins(PAD, PAD, PAD, PAD)
+        layout.setSpacing(GAP)
         layout.addLayout(header)
         layout.addWidget(self._fall_area, stretch=1)
         layout.addWidget(self._flash)

@@ -26,7 +26,7 @@ from PySide6.QtWidgets import (
 from qlizmet.core.markup import face_preview
 from qlizmet.core.models import Card
 from qlizmet.core.study import MatchGame, MatchOutcome
-from qlizmet.ui.theme import set_state
+from qlizmet.ui.theme import GAP, PAD, set_state
 
 TICK_MS = 100
 COLUMNS = 4
@@ -79,6 +79,8 @@ class MatchView(QWidget):
         self._summary.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         layout = QVBoxLayout()
+        layout.setContentsMargins(PAD, PAD, PAD, PAD)
+        layout.setSpacing(GAP)
         layout.addLayout(header)
         layout.addWidget(self._grid_host, stretch=1)
         layout.addWidget(self._summary)

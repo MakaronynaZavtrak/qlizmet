@@ -10,6 +10,13 @@ from qlizmet.core.models import Card, CardFace, LatexBlock  # noqa: E402
 from qlizmet.storage.sqlite.repositories import SqliteDeckRepository  # noqa: E402
 from qlizmet.ui.views.card_editor_dialog import CardEditorDialog  # noqa: E402
 from qlizmet.ui.views.deck_editor_view import DeckEditorView  # noqa: E402
+from qlizmet.ui.widgets.list_delegate import SUBTITLE_ROLE  # noqa: E402
+
+
+def _row(view, index: int = 0) -> tuple[str, str]:
+    """Заголовок (лицо) и подзаголовок (оборот) строки списка."""
+    item = view.findChild(object, "cardList").item(index)
+    return item.text(), item.data(SUBTITLE_ROLE)
 
 
 @pytest.fixture
@@ -47,21 +54,21 @@ def test_add_card_appears_in_list(editor) -> None:
 
 def test_list_row_shows_both_sides(editor) -> None:
     editor.add_card_from_markup("Франция", "Париж")
-    text = editor.findChild(object, "cardList").item(0).text()
-    assert "Франция" in text
-    assert "Париж" in text
+    front, back = _row(editor)
+    assert front == "Франция"
+    assert back == "Париж"
 
 
 def test_formula_card_row_is_marked(editor) -> None:
     editor.add_card_from_markup("производная sin x", r"$\cos x$")
-    text = editor.findChild(object, "cardList").item(0).text()
-    assert "формула" in text
+    _, back = _row(editor)
+    assert "формула" in back
 
 
 def test_update_card_changes_row(editor) -> None:
     card_id = editor.add_card_from_markup("Франция", "Лондон")
     editor.update_card(card_id, CardFace.from_text("Франция"), CardFace.from_text("Париж"))
-    assert "Париж" in editor.findChild(object, "cardList").item(0).text()
+    assert _row(editor)[1] == "Париж"
 
 
 def test_delete_card(editor) -> None:
