@@ -82,6 +82,7 @@ RADIUS = 8
 PAD = 20
 GAP = 12
 
+
 #: Активная тема. Нужна тем местам, что рисуют не виджетами, а картинкой
 #: (рендер формул) — QSS до них не достаёт.
 _current = Theme.DARK
@@ -190,6 +191,13 @@ QProgressBar {{
 }}
 QProgressBar::chunk {{ background: {p.accent}; border-radius: {RADIUS}px; }}
 
+#cardSurface {{
+    background: {p.surface};
+    border: 1px solid {p.border};
+    border-radius: 16px;
+}}
+#cardFace {{ font-size: 20px; }}
+
 #screenTitle, #deckTitle {{ font-size: 20px; font-weight: 600; }}
 #emptyHint, #hintLabel, #markupHint, #kindLabel, #sideLabel, #mistakesLabel {{
     color: {p.text_muted};
@@ -237,6 +245,9 @@ def set_role(widget: QWidget, role: str) -> None:
     style.unpolish(widget)
     style.polish(widget)
 
+
+#: Какая кнопка какую роль играет. Список держим здесь, а не в экранах: вес
+#: кнопки — это вопрос оформления, и так его видно целиком в одном месте.
 ROLES = {
     "openButton": "primary",
     "deleteButton": "danger",
