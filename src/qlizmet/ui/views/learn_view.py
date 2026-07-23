@@ -32,6 +32,7 @@ from qlizmet.core.study import (
     LearnSession,
     QuestionType,
 )
+from qlizmet.ui.icons import set_icon
 from qlizmet.ui.theme import GAP, PAD, set_state
 from qlizmet.ui.widgets.face_view import FaceView
 
@@ -55,8 +56,9 @@ class LearnView(QWidget):
         self._session: LearnSession | None = None
         self._pending: LearnFeedback | None = None
 
-        back = QPushButton("← Выйти")
+        back = QPushButton("Выйти")
         back.setObjectName("backButton")
+        set_icon(back, "arrow-left")
         back.clicked.connect(self.back_requested.emit)
 
         self._progress = QLabel()

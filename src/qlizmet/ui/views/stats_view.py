@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
 
 from qlizmet.app.stats_service import StatsService
 from qlizmet.core.stats import MATURE_INTERVAL_DAYS, DeckStats
+from qlizmet.ui.icons import set_icon
 from qlizmet.ui.theme import GAP, PAD
 
 
@@ -36,8 +37,9 @@ class StatsView(QWidget):
         self._stats = stats
         self._deck_id: str | None = None
 
-        back = QPushButton("← К набору")
+        back = QPushButton("К набору")
         back.setObjectName("backButton")
+        set_icon(back, "arrow-left")
         back.clicked.connect(self.back_requested.emit)
 
         title = QLabel("Статистика")

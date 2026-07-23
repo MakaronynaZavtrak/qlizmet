@@ -32,6 +32,7 @@ from qlizmet.core.study import (
     TestResult,
     TestSession,
 )
+from qlizmet.ui.icons import set_icon
 from qlizmet.ui.theme import GAP, PAD
 from qlizmet.ui.widgets.face_view import FaceView
 
@@ -59,8 +60,9 @@ class TestView(QWidget):
         self._index = 0
         self._result: TestResult | None = None
 
-        back = QPushButton("← Выйти")
+        back = QPushButton("Выйти")
         back.setObjectName("backButton")
+        set_icon(back, "arrow-left")
         back.clicked.connect(self.back_requested.emit)
 
         self._progress = QLabel()

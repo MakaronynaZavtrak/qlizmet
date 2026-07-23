@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
 from qlizmet.app.deck_service import DeckService
 from qlizmet.core.markup import face_from_markup, face_preview
 from qlizmet.core.models import CardFace
+from qlizmet.ui.icons import set_icon
 from qlizmet.ui.theme import GAP, PAD
 from qlizmet.ui.views.card_editor_dialog import CardEditorDialog
 from qlizmet.ui.widgets.list_delegate import SUBTITLE_ROLE, TwoLineDelegate
@@ -50,16 +51,19 @@ class DeckEditorView(QWidget):
         self._media_root = media_root
         self._deck_id: str | None = None
 
-        back = QPushButton("← К наборам")
+        back = QPushButton("К наборам")
         back.setObjectName("backButton")
+        set_icon(back, "arrow-left")
         back.clicked.connect(self.back_requested.emit)
 
         stats = QPushButton("Статистика")
         stats.setObjectName("statsButton")
+        set_icon(stats, "chart")
         stats.clicked.connect(self.stats_requested.emit)
 
-        study = QPushButton("Учить →")
+        study = QPushButton("Учить")
         study.setObjectName("studyButton")
+        set_icon(study, "arrow-right")
         study.clicked.connect(self.study_requested.emit)
         self._study_button = study
 
@@ -78,22 +82,27 @@ class DeckEditorView(QWidget):
 
         add_button = QPushButton("Добавить")
         add_button.setObjectName("addCardButton")
+        set_icon(add_button, "plus")
         add_button.clicked.connect(self._add_via_dialog)
 
         edit_button = QPushButton("Изменить")
         edit_button.setObjectName("editCardButton")
+        set_icon(edit_button, "pencil")
         edit_button.clicked.connect(self._edit_selected_via_dialog)
 
         delete_button = QPushButton("Удалить")
         delete_button.setObjectName("deleteCardButton")
+        set_icon(delete_button, "trash")
         delete_button.clicked.connect(self._delete_selected_via_dialog)
 
-        up_button = QPushButton("↑")
+        up_button = QPushButton()
         up_button.setObjectName("moveUpButton")
+        set_icon(up_button, "arrow-up")
         up_button.clicked.connect(lambda: self.move_selected(-1))
 
-        down_button = QPushButton("↓")
+        down_button = QPushButton()
         down_button.setObjectName("moveDownButton")
+        set_icon(down_button, "arrow-down")
         down_button.clicked.connect(lambda: self.move_selected(+1))
 
         buttons = QHBoxLayout()

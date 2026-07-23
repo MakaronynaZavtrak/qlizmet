@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
 )
 
 from qlizmet.app.deck_service import DeckService
+from qlizmet.ui.icons import set_icon
 from qlizmet.ui.theme import GAP, PAD
 from qlizmet.core.study import Direction, StudyMode, mode_availability
 
@@ -41,8 +42,9 @@ class ModeSelectView(QWidget):
         self._implemented = implemented if implemented is not None else set(StudyMode)
         self._deck_id: str | None = None
 
-        back = QPushButton("← К набору")
+        back = QPushButton("К набору")
         back.setObjectName("backButton")
+        set_icon(back, "arrow-left")
         back.clicked.connect(self.back_requested.emit)
 
         self._title = QLabel()

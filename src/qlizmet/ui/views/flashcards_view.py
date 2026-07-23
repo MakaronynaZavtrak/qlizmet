@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
 
 from qlizmet.core.models import Card
 from qlizmet.core.study import Direction, FlashcardSession
+from qlizmet.ui.icons import set_icon
 from qlizmet.ui.theme import GAP, PAD
 from qlizmet.ui.widgets.card_surface import CardSurface
 from qlizmet.ui.widgets.face_view import FaceView
@@ -42,8 +43,9 @@ class FlashcardsView(QWidget):
         self._session: FlashcardSession | None = None
         self._answer_shown = False
 
-        back = QPushButton("← Выйти")
+        back = QPushButton("Выйти")
         back.setObjectName("backButton")
+        set_icon(back, "arrow-left")
         back.clicked.connect(self.back_requested.emit)
 
         self._progress = QLabel()

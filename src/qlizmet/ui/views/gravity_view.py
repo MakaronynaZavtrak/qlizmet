@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
 
 from qlizmet.core.models import Card
 from qlizmet.core.study import Direction, GravityGame
+from qlizmet.ui.icons import set_icon
 from qlizmet.ui.theme import GAP, PAD, set_state
 from qlizmet.ui.widgets.face_view import FaceView
 
@@ -57,8 +58,9 @@ class GravityView(QWidget):
         self._timer.setInterval(TICK_MS)
         self._timer.timeout.connect(self.tick)
 
-        back = QPushButton("← Выйти")
+        back = QPushButton("Выйти")
         back.setObjectName("backButton")
+        set_icon(back, "arrow-left")
         back.clicked.connect(self._leave)
 
         self._status = QLabel()

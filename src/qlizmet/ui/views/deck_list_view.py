@@ -22,6 +22,8 @@ from PySide6.QtWidgets import (
 )
 
 from qlizmet.app.library_service import LibraryService
+from qlizmet.ui.icons import set_icon
+from qlizmet.ui.theme import Theme
 from qlizmet.ui.theme import GAP, PAD
 from qlizmet.ui.widgets.list_delegate import SUBTITLE_ROLE, TwoLineDelegate
 
@@ -57,18 +59,22 @@ class DeckListView(QWidget):
 
         create_button = QPushButton("Создать")
         create_button.setObjectName("createButton")
+        set_icon(create_button, "plus")
         create_button.clicked.connect(self._ask_and_create)
 
         import_button = QPushButton("Импорт TSV")
         import_button.setObjectName("importButton")
+        set_icon(import_button, "download")
         import_button.clicked.connect(self._ask_and_import)
 
         delete_button = QPushButton("Удалить")
         delete_button.setObjectName("deleteButton")
+        set_icon(delete_button, "trash")
         delete_button.clicked.connect(self._confirm_and_delete)
 
         open_button = QPushButton("Открыть")
         open_button.setObjectName("openButton")
+        set_icon(open_button, "arrow-right")
         open_button.clicked.connect(self.open_selected)
 
         buttons = QHBoxLayout()
@@ -95,9 +101,10 @@ class DeckListView(QWidget):
 
     # --- данные ---
 
-    def set_theme_label(self, next_theme_title: str) -> None:
-        """Подписать кнопку тем, на что она переключит."""
-        self._theme_button.setText(f"{next_theme_title} тема")
+    def set_next_theme(self, theme: Theme) -> None:
+        """Показать на кнопке, на какую тему она переключит."""
+        self._theme_button.setText(f"{theme.title} тема")
+        set_icon(self._theme_button, "sun" if theme is Theme.LIGHT else "moon")
 
     def theme_label(self) -> str:
         return self._theme_button.text()

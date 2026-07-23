@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 from qlizmet.app.study_service import StudyService, grade_from_verdict
 from qlizmet.core.models import Card
 from qlizmet.core.study import Direction, WriteFeedback, WriteSession
+from qlizmet.ui.icons import set_icon
 from qlizmet.ui.theme import GAP, PAD, set_state
 from qlizmet.ui.widgets.face_view import FaceView
 
@@ -52,8 +53,9 @@ class WriteView(QWidget):
         self._session: WriteSession | None = None
         self._pending: tuple[str, WriteFeedback, str] | None = None
 
-        back = QPushButton("← Выйти")
+        back = QPushButton("Выйти")
         back.setObjectName("backButton")
+        set_icon(back, "arrow-left")
         back.clicked.connect(self.back_requested.emit)
 
         self._progress = QLabel()
