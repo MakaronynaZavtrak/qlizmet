@@ -127,6 +127,7 @@ class MainWindow(QMainWindow):
         )
         self._settings_view.setObjectName(PAGE_SETTINGS)
         self._settings_view.back_requested.connect(self.show_deck_list)
+        self._settings_view.settings_changed.connect(self._apply_settings)
 
         self._stats_view = StatsView(stats)
         self._stats_view.setObjectName(PAGE_STATS)
@@ -237,6 +238,21 @@ class MainWindow(QMainWindow):
     def minimizes_to_tray(self) -> bool:
         """Свернётся ли окно в трей вместо выхода при закрытии."""
         return self._minimize_to_tray and self._tray is not None
+
+    def set_minimize_to_tray(self, enabled: bool) -> None:
+        """Включить или выключить сворачивание в трей прямо сейчас.
+
+        Заодно переставляется поведение всего приложения: пока сворачивание
+        включено, закрытие последнего окна не должно завершать программу — и
+        наоборот, иначе снятая галочка не подействовала бы до перезапуска.
+        """
+        self._minimize_to_tray = enabled
+        app = QApplication.instance()
+        if app is not None:
+            app.setQuitOnLastWindowClosed(not self.minimizes_to_tray)
+
+    def _apply_settings(self, settings) -> None:
+        self.set_minimize_to_tray(settings.minimize_to_tray)
 
     def set_tray_notice_pending(self, pending: bool) -> None:
         """Нужно ли при первом сворачивании пояснить, что приложение не закрылось."""

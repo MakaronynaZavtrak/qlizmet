@@ -29,7 +29,7 @@ from qlizmet.ui.widgets.screen_header import ScreenHeader
 
 NO_TRAY_HINT = "В этой системе нет трея"
 NO_AUTOSTART_HINT = "Автозапуск для этой системы не поддерживается"
-RESTART_HINT = "Изменение сворачивания подействует после перезапуска"
+TRAY_HINT = "Пока приложение свёрнуто в трей, оно продолжает напоминать о повторениях"
 
 
 class SettingsView(QWidget):
@@ -168,4 +168,4 @@ class SettingsView(QWidget):
         elif self._autostart is None:
             self._hint.setText(NO_AUTOSTART_HINT)
         else:
-            self._hint.setText(RESTART_HINT)
+            self._hint.setText(TRAY_HINT)

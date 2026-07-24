@@ -216,3 +216,52 @@ def test_theme_change_refreshes_tray_icon(env, qt_host, tmp_path, monkeypatch) -
 
     window.toggle_theme()
     assert tray.icon_refreshes == 1
+
+
+# --- настройка применяется сразу, а не после перезапуска ---
+
+
+def test_unchecking_setting_stops_minimizing(env, qt_host, tmp_path, monkeypatch) -> None:
+    """Снял галочку — крестик снова закрывает приложение, без перезапуска."""
+    from qlizmet.app.paths import ENV_HOME
+
+    monkeypatch.setenv(ENV_HOME, str(tmp_path))
+    tray = FakeTray()
+    window = _window(env, qt_host, tray=tray, minimize=True)
+    assert window.minimizes_to_tray
+
+    window.settings_view.findChild(object, "trayCheck").setChecked(False)
+
+    assert not window.minimizes_to_tray
+    event = QCloseEvent()
+    window.closeEvent(event)
+    assert event.isAccepted()
+
+
+def test_checking_setting_starts_minimizing(env, qt_host, tmp_path, monkeypatch) -> None:
+    from qlizmet.app.paths import ENV_HOME
+    from qlizmet.app.settings import Settings, save_settings
+
+    monkeypatch.setenv(ENV_HOME, str(tmp_path))
+    save_settings(Settings(minimize_to_tray=False))  # исходно выключено
+    tray = FakeTray()
+    window = _window(env, qt_host, tray=tray, minimize=False)
+    assert not window.minimizes_to_tray
+
+    window.settings_view.findChild(object, "trayCheck").setChecked(True)
+
+    assert window.minimizes_to_tray
+    event = QCloseEvent()
+    window.closeEvent(event)
+    assert not event.isAccepted()  # свернулись, а не закрылись
+
+
+def test_setting_cannot_enable_minimizing_without_tray(env, qt_host, tmp_path, monkeypatch) -> None:
+    """Без трея сворачивать некуда, сколько галочку ни ставь."""
+    from qlizmet.app.paths import ENV_HOME
+
+    monkeypatch.setenv(ENV_HOME, str(tmp_path))
+    window = _window(env, qt_host, tray=None, minimize=False)
+    window.set_minimize_to_tray(True)
+
+    assert not window.minimizes_to_tray
