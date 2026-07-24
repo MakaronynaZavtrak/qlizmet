@@ -38,6 +38,7 @@ class DeckEditorView(QWidget):
 
     back_requested = Signal()
     study_requested = Signal()
+    review_requested = Signal()
     stats_requested = Signal()
 
     def __init__(
@@ -59,6 +60,12 @@ class DeckEditorView(QWidget):
         stats.setObjectName("statsButton")
         set_icon(stats, "chart")
         stats.clicked.connect(self.stats_requested.emit)
+
+        review = QPushButton("Повторить сегодня")
+        review.setObjectName("reviewButton")
+        set_icon(review, "repeat")
+        review.clicked.connect(self.review_requested.emit)
+        self._review_button = review
 
         study = QPushButton("Учить")
         study.setObjectName("studyButton")
@@ -111,6 +118,7 @@ class DeckEditorView(QWidget):
         buttons.addWidget(down_button)
 
         self._header.add_action(stats)
+        self._header.add_action(review)
         self._header.add_action(study)
 
         layout = QVBoxLayout()
@@ -131,6 +139,16 @@ class DeckEditorView(QWidget):
     def load(self, deck_id: str) -> None:
         self._deck_id = deck_id
         self.refresh()
+
+    def set_pending(self, count: int) -> None:
+        """Показать, сколько карточек ждёт повторения; ноль гасит кнопку."""
+        self._review_button.setText(
+            "Повторить сегодня" if count == 0 else f"Повторить сегодня ({count})"
+        )
+        self._review_button.setEnabled(count > 0)
+        self._review_button.setToolTip(
+            "На сегодня всё повторено" if count == 0 else ""
+        )
 
     def refresh(self) -> None:
         previous = self.selected_card_id()
