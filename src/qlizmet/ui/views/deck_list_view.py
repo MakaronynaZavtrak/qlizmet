@@ -42,6 +42,7 @@ class DeckListView(QWidget):
 
     deck_opened = Signal(str)
     theme_toggle_requested = Signal()
+    settings_requested = Signal()
 
     def __init__(
         self,
@@ -53,6 +54,11 @@ class DeckListView(QWidget):
         super().__init__(parent)
         self._library = library
         self._scheduler = scheduler
+
+        settings_button = QPushButton("Настройки")
+        settings_button.setObjectName("settingsButton")
+        set_icon(settings_button, "sliders")
+        settings_button.clicked.connect(self.settings_requested.emit)
 
         header = ScreenHeader("Мои наборы", back_text=None)
 
@@ -98,6 +104,7 @@ class DeckListView(QWidget):
         buttons.addWidget(open_button)
 
         header.add_action(self._theme_button)
+        header.add_action(settings_button)
 
         layout = QVBoxLayout()
         layout.setContentsMargins(PAD, PAD, PAD, PAD)

@@ -12,19 +12,22 @@ import sys
 def main() -> int:
     from PySide6.QtWidgets import QApplication
 
+    from qlizmet.app import autostart as autostart_module
     from qlizmet.app.deck_service import DeckService
     from qlizmet.app.library_service import LibraryService
     from qlizmet.app.scheduler_service import SchedulerService
     from qlizmet.app.stats_service import StatsService
     from qlizmet.app.study_service import StudyService
     from qlizmet.app.paths import database_path, media_dir
-    from qlizmet.app.settings import load_settings
+    from qlizmet.app.settings import load_settings, save_settings
     from qlizmet.storage.sqlite.database import connect
     from qlizmet.storage.sqlite.repositories import (
         SqliteDeckRepository,
         SqliteProgressRepository,
     )
     from qlizmet.ui.main_window import MainWindow
+    from qlizmet.ui import tray as tray_module
+    from qlizmet.ui.reminder_runner import ReminderRunner
     from qlizmet.ui.theme import Theme, apply_theme
 
     connection = connect(database_path())
@@ -39,6 +42,14 @@ def main() -> int:
 
     app = QApplication(sys.argv)
     apply_theme(app, theme)
+
+    # значок в трее может быть недоступен (например, в голой системе без панели)
+    tray = tray_module.create()
+    minimize_to_tray = settings.minimize_to_tray and tray is not None
+    if minimize_to_tray:
+        # иначе закрытие последнего окна завершило бы приложение,
+        # и сворачивание в трей потеряло бы смысл
+        app.setQuitOnLastWindowClosed(False)
     window = MainWindow(
         LibraryService(repository),
         DeckService(repository),
@@ -47,11 +58,37 @@ def main() -> int:
         SchedulerService(repository, progress),
         media_root=media_dir(),
         theme=theme,
+        tray=tray,
+        minimize_to_tray=minimize_to_tray,
+        autostart=autostart_module.create(),
     )
+    window.set_tray_notice_pending(not settings.tray_notice_shown)
+    window.tray_notice_shown.connect(
+        lambda: save_settings(load_settings().with_tray_notice_shown())
+    )
+
+    reminders = None
+    if tray is not None:
+        tray.open_requested.connect(window.restore_from_tray)
+        tray.quit_requested.connect(app.quit)
+        tray.show()
+        window.update_tray_pending()
+
+        reminders = ReminderRunner(
+            SchedulerService(repository, progress),
+            tray,
+            # пока человек смотрит в открытое окно, напоминать ему незачем
+            is_busy=lambda: window.isVisible() and window.isActiveWindow(),
+        )
+        reminders.pending_changed.connect(tray.set_pending)
+        reminders.start()
+
     window.show()
     try:
         return app.exec()
     finally:
+        if reminders is not None:
+            reminders.stop()
         connection.close()
 
 
