@@ -12,6 +12,7 @@ import sys
 def main() -> int:
     from PySide6.QtWidgets import QApplication
 
+    from qlizmet.app import autostart as autostart_module
     from qlizmet.app.deck_service import DeckService
     from qlizmet.app.library_service import LibraryService
     from qlizmet.app.scheduler_service import SchedulerService
@@ -59,6 +60,7 @@ def main() -> int:
         theme=theme,
         tray=tray,
         minimize_to_tray=minimize_to_tray,
+        autostart=autostart_module.create(),
     )
     window.set_tray_notice_pending(not settings.tray_notice_shown)
     window.tray_notice_shown.connect(

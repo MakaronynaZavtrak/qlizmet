@@ -57,6 +57,8 @@ SHAPES: dict[str, str] = {
     "close": '<path d="M6 6l12 12M18 6L6 18"/>',
     "download": '<path d="M12 4v11"/><path d="M7 11l5 5 5-5"/>'
                 '<path d="M5 20h14"/>',
+    "sliders": '<path d="M4 8h16M4 16h16"/>'
+               '<circle cx="9" cy="8" r="2.5"/><circle cx="15" cy="16" r="2.5"/>',
     "sun": '<circle cx="12" cy="12" r="4"/>'
            '<path d="M12 2v2M12 20v2M2 12h2M20 12h2"/>'
            '<path d="M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/>',
@@ -91,17 +93,35 @@ def icon(name: str, *, color: str | None = None, size: int = DEFAULT_SIZE) -> QI
     return QIcon(_render(name, color or current_palette().text, size))
 
 
+#: В этом свойстве хранится размер иконки — чтобы перерисовать её тем же.
+ICON_SIZE_PROPERTY = "iconSize_"
+
+
 def set_icon(widget: QWidget, name: str, *, size: int = DEFAULT_SIZE) -> None:
-    """Поставить виджету иконку и запомнить её имя для перерисовки при смене темы."""
+    """Поставить виджету иконку и запомнить её для перерисовки при смене темы.
+
+    Работает и с кнопками (``setIcon``), и с ярлыками (``setPixmap``) — крупные
+    иконки удобнее показывать именно ярлыком.
+    """
     if name not in SHAPES:
         raise UnknownIcon(name)
     widget.setProperty(ICON_NAME_PROPERTY, name)
-    widget.setIcon(icon(name, size=size))
+    widget.setProperty(ICON_SIZE_PROPERTY, size)
+    _paint(widget, name, size)
 
 
-def refresh_icons(root: QWidget, *, size: int = DEFAULT_SIZE) -> None:
+def refresh_icons(root: QWidget) -> None:
     """Перерисовать иконки всех потомков ``root`` в цветах текущей темы."""
     for child in root.findChildren(QWidget):
         name = child.property(ICON_NAME_PROPERTY)
-        if name and hasattr(child, "setIcon"):
-            child.setIcon(icon(name, size=size))
+        if not name:
+            continue
+        size = child.property(ICON_SIZE_PROPERTY) or DEFAULT_SIZE
+        _paint(child, name, int(size))
+
+
+def _paint(widget: QWidget, name: str, size: int) -> None:
+    if hasattr(widget, "setIcon"):
+        widget.setIcon(icon(name, size=size))
+    elif hasattr(widget, "setPixmap"):
+        widget.setPixmap(_render(name, current_palette().text, size))

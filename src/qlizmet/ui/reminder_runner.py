@@ -91,7 +91,11 @@ class ReminderRunner(QObject):
             pending,
             now=moment,
             last_sent=settings.last_reminder,
-            policy=ReminderPolicy(enabled=settings.reminders_enabled),
+            policy=ReminderPolicy(
+                enabled=settings.reminders_enabled,
+                quiet_before=settings.quiet_before,
+                quiet_after=settings.quiet_after,
+            ),
         )
         if decision.should_notify:
             self._notifier.notify(decision.title, decision.body)
