@@ -26,6 +26,7 @@ def main() -> int:
     )
     from qlizmet.ui.main_window import MainWindow
     from qlizmet.ui import tray as tray_module
+    from qlizmet.ui.reminder_runner import ReminderRunner
     from qlizmet.ui.theme import Theme, apply_theme
 
     connection = connect(database_path())
@@ -64,16 +65,28 @@ def main() -> int:
         lambda: save_settings(load_settings().with_tray_notice_shown())
     )
 
+    reminders = None
     if tray is not None:
         tray.open_requested.connect(window.restore_from_tray)
         tray.quit_requested.connect(app.quit)
         tray.show()
         window.update_tray_pending()
 
+        reminders = ReminderRunner(
+            SchedulerService(repository, progress),
+            tray,
+            # пока человек смотрит в открытое окно, напоминать ему незачем
+            is_busy=lambda: window.isVisible() and window.isActiveWindow(),
+        )
+        reminders.pending_changed.connect(tray.set_pending)
+        reminders.start()
+
     window.show()
     try:
         return app.exec()
     finally:
+        if reminders is not None:
+            reminders.stop()
         connection.close()
 
 
