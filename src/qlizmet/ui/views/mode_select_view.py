@@ -1,8 +1,8 @@
 """Экран выбора режима обучения.
 
-Показывает все режимы, но включает только те, что доступны для этого набора
-(см. ``core.study.modes``) и уже реализованы. Недоступная кнопка гаснет и
-объясняет причину подсказкой — это честнее, чем прятать её совсем.
+Показывает все режимы карточками: иконка, название и строка пояснения.
+Недоступный режим не прячется и не отделывается подсказкой под курсором —
+причина написана прямо в карточке (``core.study.modes`` её и формулирует).
 """
 from __future__ import annotations
 
@@ -17,10 +17,24 @@ from PySide6.QtWidgets import (
 )
 
 from qlizmet.app.deck_service import DeckService
-from qlizmet.ui.theme import GAP, PAD
 from qlizmet.core.study import Direction, StudyMode, mode_availability
+from qlizmet.ui.widgets.screen_header import ScreenHeader
+from qlizmet.ui.theme import GAP, PAD
+from qlizmet.ui.widgets.mode_card import ModeCard
 
 NOT_READY_HINT = "появится в следующих версиях"
+COLUMNS = 3
+
+#: Иконка на карточку режима. Соответствие живёт в интерфейсе — ядро про
+#: рисунки ничего не знает.
+MODE_ICONS = {
+    StudyMode.FLASHCARDS: "cards",
+    StudyMode.LEARN: "repeat",
+    StudyMode.WRITE: "pencil",
+    StudyMode.TEST: "checklist",
+    StudyMode.MATCH: "grid",
+    StudyMode.GRAVITY: "falling",
+}
 
 
 class ModeSelectView(QWidget):
@@ -41,33 +55,26 @@ class ModeSelectView(QWidget):
         self._implemented = implemented if implemented is not None else set(StudyMode)
         self._deck_id: str | None = None
 
-        back = QPushButton("← К набору")
-        back.setObjectName("backButton")
-        back.clicked.connect(self.back_requested.emit)
-
-        self._title = QLabel()
-        self._title.setObjectName("deckTitle")
-
-        header = QHBoxLayout()
-        header.addWidget(back)
-        header.addWidget(self._title, stretch=1)
+        self._header = ScreenHeader(back_text="К набору", title_name="deckTitle")
+        self._header.back_requested.connect(self.back_requested.emit)
 
         grid = QGridLayout()
-        self._buttons: dict[StudyMode, QPushButton] = {}
+        grid.setSpacing(GAP)
+        self._cards: dict[StudyMode, ModeCard] = {}
         for index, mode in enumerate(StudyMode):
-            button = QPushButton(mode.title)
-            button.setObjectName(f"mode_{mode.value}")
-            button.setMinimumHeight(64)
-            button.clicked.connect(
+            card = ModeCard(mode.title, icon_name=MODE_ICONS[mode])
+            card.setObjectName("modeCard")
+            card.set_hint(mode.description)
+            card.clicked.connect(
                 lambda _checked=False, m=mode: self.mode_selected.emit(m.value)
             )
-            self._buttons[mode] = button
-            grid.addWidget(button, index // 2, index % 2)
+            self._cards[mode] = card
+            grid.addWidget(card, index // COLUMNS, index % COLUMNS)
 
         layout = QVBoxLayout()
         layout.setContentsMargins(PAD, PAD, PAD, PAD)
         layout.setSpacing(GAP)
-        layout.addLayout(header)
+        layout.addWidget(self._header)
         layout.addStretch(1)
         layout.addLayout(grid)
         layout.addStretch(1)
@@ -80,23 +87,26 @@ class ModeSelectView(QWidget):
     def load(self, deck_id: str, direction: Direction = Direction.FRONT_TO_BACK) -> None:
         self._deck_id = deck_id
         deck = self._decks.get(deck_id)
-        self._title.setText(deck.title)
+        self._header.set_title(deck.title)
 
         reasons = mode_availability(deck.cards, direction)
-        for mode, button in self._buttons.items():
+        for mode, card in self._cards.items():
             reason = reasons[mode]
-            ready = mode in self._implemented
-            button.setEnabled(reason is None and ready)
-            if not ready:
-                button.setToolTip(NOT_READY_HINT)
+            if mode not in self._implemented:
+                card.set_available(False, NOT_READY_HINT)
             elif reason:
-                button.setToolTip(reason)
+                card.set_available(False, reason)
             else:
-                button.setToolTip("")
+                card.set_available(True, description=mode.description)
 
     def enabled_modes(self) -> set[StudyMode]:
-        """Режимы, кнопки которых сейчас активны (удобно для тестов)."""
-        return {mode for mode, button in self._buttons.items() if button.isEnabled()}
+        """Режимы, карточки которых сейчас активны (удобно для тестов)."""
+        return {mode for mode, card in self._cards.items() if card.isEnabled()}
 
-    def button_for(self, mode: StudyMode) -> QPushButton:
-        return self._buttons[mode]
+    def button_for(self, mode: StudyMode) -> ModeCard:
+        return self._cards[mode]
+
+    def refresh_icons(self) -> None:
+        """Перерисовать иконки карточек после смены темы."""
+        for card in self._cards.values():
+            card.refresh_icon()

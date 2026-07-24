@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 from qlizmet.app.study_service import StudyService, grade_from_verdict
 from qlizmet.core.models import Card
 from qlizmet.core.study import Direction, WriteFeedback, WriteSession
+from qlizmet.ui.widgets.screen_header import ScreenHeader
 from qlizmet.ui.theme import GAP, PAD, set_state
 from qlizmet.ui.widgets.face_view import FaceView
 
@@ -52,17 +53,14 @@ class WriteView(QWidget):
         self._session: WriteSession | None = None
         self._pending: tuple[str, WriteFeedback, str] | None = None
 
-        back = QPushButton("← Выйти")
-        back.setObjectName("backButton")
-        back.clicked.connect(self.back_requested.emit)
+        header = ScreenHeader(back_text="Выйти")
+        header.back_requested.connect(self.back_requested.emit)
 
         self._progress = QLabel()
         self._progress.setObjectName("progressLabel")
         self._progress.setAlignment(Qt.AlignmentFlag.AlignRight)
 
-        header = QHBoxLayout()
-        header.addWidget(back)
-        header.addWidget(self._progress, stretch=1)
+        header.add_action(self._progress)
 
         self._prompt = FaceView(media_root=media_root)
         self._prompt.setObjectName("promptFace")
@@ -103,7 +101,7 @@ class WriteView(QWidget):
         layout = QVBoxLayout()
         layout.setContentsMargins(PAD, PAD, PAD, PAD)
         layout.setSpacing(GAP)
-        layout.addLayout(header)
+        layout.addWidget(header)
         layout.addStretch(1)
         layout.addWidget(self._prompt)
         layout.addWidget(self._answer_edit)

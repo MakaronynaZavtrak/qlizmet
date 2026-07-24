@@ -22,8 +22,15 @@ from PySide6.QtWidgets import (
 )
 
 from qlizmet.app.library_service import LibraryService
+from qlizmet.ui.icons import set_icon
+from qlizmet.ui.widgets.screen_header import ScreenHeader
+from qlizmet.ui.theme import Theme
 from qlizmet.ui.theme import GAP, PAD
-from qlizmet.ui.widgets.list_delegate import SUBTITLE_ROLE, TwoLineDelegate
+from qlizmet.ui.widgets.list_delegate import (
+    PROGRESS_ROLE,
+    SUBTITLE_ROLE,
+    TwoLineDelegate,
+)
 
 DECK_ID_ROLE = Qt.ItemDataRole.UserRole
 
@@ -38,8 +45,7 @@ class DeckListView(QWidget):
         super().__init__(parent)
         self._library = library
 
-        title = QLabel("Мои наборы")
-        title.setObjectName("screenTitle")
+        header = ScreenHeader("Мои наборы", back_text=None)
 
         self._theme_button = QPushButton()
         self._theme_button.setObjectName("themeButton")
@@ -57,18 +63,22 @@ class DeckListView(QWidget):
 
         create_button = QPushButton("Создать")
         create_button.setObjectName("createButton")
+        set_icon(create_button, "plus")
         create_button.clicked.connect(self._ask_and_create)
 
         import_button = QPushButton("Импорт TSV")
         import_button.setObjectName("importButton")
+        set_icon(import_button, "download")
         import_button.clicked.connect(self._ask_and_import)
 
         delete_button = QPushButton("Удалить")
         delete_button.setObjectName("deleteButton")
+        set_icon(delete_button, "trash")
         delete_button.clicked.connect(self._confirm_and_delete)
 
         open_button = QPushButton("Открыть")
         open_button.setObjectName("openButton")
+        set_icon(open_button, "arrow-right")
         open_button.clicked.connect(self.open_selected)
 
         buttons = QHBoxLayout()
@@ -78,14 +88,12 @@ class DeckListView(QWidget):
         buttons.addWidget(delete_button)
         buttons.addWidget(open_button)
 
-        header = QHBoxLayout()
-        header.addWidget(title, stretch=1)
-        header.addWidget(self._theme_button)
+        header.add_action(self._theme_button)
 
         layout = QVBoxLayout()
         layout.setContentsMargins(PAD, PAD, PAD, PAD)
         layout.setSpacing(GAP)
-        layout.addLayout(header)
+        layout.addWidget(header)
         layout.addWidget(self._empty_hint)
         layout.addWidget(self._list, stretch=1)
         layout.addLayout(buttons)
@@ -95,9 +103,10 @@ class DeckListView(QWidget):
 
     # --- данные ---
 
-    def set_theme_label(self, next_theme_title: str) -> None:
-        """Подписать кнопку тем, на что она переключит."""
-        self._theme_button.setText(f"{next_theme_title} тема")
+    def set_next_theme(self, theme: Theme) -> None:
+        """Показать на кнопке, на какую тему она переключит."""
+        self._theme_button.setText(f"{theme.title} тема")
+        set_icon(self._theme_button, "sun" if theme is Theme.LIGHT else "moon")
 
     def theme_label(self) -> str:
         return self._theme_button.text()
@@ -111,6 +120,8 @@ class DeckListView(QWidget):
             item = QListWidgetItem(summary.title)
             item.setData(DECK_ID_ROLE, summary.id)
             item.setData(SUBTITLE_ROLE, _deck_subtitle(summary))
+            if summary.card_count:
+                item.setData(PROGRESS_ROLE, summary.mastery)
             if summary.description:
                 item.setToolTip(summary.description)
             self._list.addItem(item)
@@ -194,4 +205,6 @@ class DeckListView(QWidget):
 def _deck_subtitle(summary) -> str:
     """Вторая строка набора: количество карточек и описание, если оно есть."""
     cards = f"{summary.card_count} карт."
+    if summary.card_count:
+        cards += f" · закреплено {round(summary.mastery * 100)}%"
     return f"{cards} · {summary.description}" if summary.description else cards

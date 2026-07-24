@@ -32,6 +32,7 @@ from qlizmet.core.study import (
     TestResult,
     TestSession,
 )
+from qlizmet.ui.widgets.screen_header import ScreenHeader
 from qlizmet.ui.theme import GAP, PAD
 from qlizmet.ui.widgets.face_view import FaceView
 
@@ -59,17 +60,14 @@ class TestView(QWidget):
         self._index = 0
         self._result: TestResult | None = None
 
-        back = QPushButton("← Выйти")
-        back.setObjectName("backButton")
-        back.clicked.connect(self.back_requested.emit)
+        header = ScreenHeader(back_text="Выйти")
+        header.back_requested.connect(self.back_requested.emit)
 
         self._progress = QLabel()
         self._progress.setObjectName("progressLabel")
         self._progress.setAlignment(Qt.AlignmentFlag.AlignRight)
 
-        header = QHBoxLayout()
-        header.addWidget(back)
-        header.addWidget(self._progress, stretch=1)
+        header.add_action(self._progress)
 
         self._kind_label = QLabel()
         self._kind_label.setObjectName("kindLabel")
@@ -134,7 +132,7 @@ class TestView(QWidget):
         layout = QVBoxLayout()
         layout.setContentsMargins(PAD, PAD, PAD, PAD)
         layout.setSpacing(GAP)
-        layout.addLayout(header)
+        layout.addWidget(header)
         layout.addStretch(1)
         layout.addWidget(self._kind_label)
         layout.addWidget(self._prompt)

@@ -11,6 +11,7 @@ from qlizmet.app.stats_service import StatsService
 from qlizmet.app.study_service import StudyService
 from qlizmet.app.settings import Settings, save_settings
 from qlizmet.core.study import Direction, StudyMode
+from qlizmet.ui.icons import refresh_icons
 from qlizmet.ui.theme import Theme, apply_roles, apply_theme
 from qlizmet.ui.views.deck_editor_view import DeckEditorView
 from qlizmet.ui.views.deck_list_view import DeckListView
@@ -67,7 +68,7 @@ class MainWindow(QMainWindow):
         self._deck_list.setObjectName(PAGE_DECK_LIST)
         self._deck_list.deck_opened.connect(self.open_deck)
         self._deck_list.theme_toggle_requested.connect(self.toggle_theme)
-        self._deck_list.set_theme_label(theme.toggled().title)
+        self._deck_list.set_next_theme(theme.toggled())
 
         self._deck_editor = DeckEditorView(decks, media_root=media_root)
         self._deck_editor.setObjectName(PAGE_DECK)
@@ -186,8 +187,10 @@ class MainWindow(QMainWindow):
         app = QApplication.instance()
         if app is not None:
             apply_theme(app, self._theme)
-        self._deck_list.set_theme_label(self._theme.toggled().title)
+        self._deck_list.set_next_theme(self._theme.toggled())
         save_settings(Settings(theme=self._theme.value))
+        refresh_icons(self)  # иконки нарисованы цветом старой темы — перерисуем
+        self._modes.refresh_icons()  # у карточек режимов иконка своя, картинкой
         self._refresh_current()
         return self._theme
 

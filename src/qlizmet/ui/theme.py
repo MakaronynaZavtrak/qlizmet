@@ -82,6 +82,20 @@ RADIUS = 8
 PAD = 20
 GAP = 12
 
+#: Шрифт: свой не вшиваем — системные гротески на Windows и macOS хороши,
+#: а файл шрифта тянул бы за собой лицензию и вес в репозитории.
+FONT_STACK = (
+    '"Segoe UI Variable Text", "Segoe UI", Inter, '
+    '-apple-system, "Helvetica Neue", "Noto Sans", sans-serif'
+)
+
+#: Шкала размеров: подпись — текст — заголовок — крупное число.
+FONT_CAPTION = 12
+FONT_BODY = 14
+FONT_SUBTITLE = 16
+FONT_TITLE = 20
+FONT_DISPLAY = 28
+
 
 #: Активная тема. Нужна тем местам, что рисуют не виджетами, а картинкой
 #: (рендер формул) — QSS до них не достаёт.
@@ -107,7 +121,8 @@ def build_stylesheet(theme: Theme) -> str:
 QMainWindow, QDialog {{ background: {p.window}; }}
 QWidget {{
     color: {p.text};
-    font-size: 14px;
+    font-family: {FONT_STACK};
+    font-size: {FONT_BODY}px;
 }}
 QToolTip {{
     background: {p.surface_alt};
@@ -191,19 +206,47 @@ QProgressBar {{
 }}
 QProgressBar::chunk {{ background: {p.accent}; border-radius: {RADIUS}px; }}
 
+#metricTile, #metricTileAccent {{
+    background: {p.surface};
+    border: 1px solid {p.border};
+    border-radius: 12px;
+}}
+#metricTileAccent {{ border-color: {p.accent}; }}
+*[class="metricValue"] {{ font-size: {FONT_DISPLAY}px; font-weight: 600; }}
+#metricCaption, #legendLabel {{ color: {p.text_muted}; font-size: {FONT_CAPTION}px; }}
+
+QPushButton#modeCard {{
+    background: {p.surface};
+    border: 1px solid {p.border};
+    border-radius: 12px;
+    padding: 0;
+    text-align: left;
+}}
+QPushButton#modeCard:hover {{ border-color: {p.accent}; background: {p.surface_alt}; }}
+QPushButton#modeCard:focus {{ border-color: {p.accent}; }}
+QPushButton#modeCard:disabled {{ background: {p.window}; border-color: {p.border}; }}
+#modeCardTitle {{ font-size: {FONT_SUBTITLE}px; font-weight: 600; }}
+#modeCardHint {{ color: {p.text_muted}; font-size: {FONT_CAPTION}px; }}
+QPushButton#modeCard:disabled #modeCardTitle {{ color: {p.text_muted}; }}
+
 #cardSurface {{
     background: {p.surface};
     border: 1px solid {p.border};
     border-radius: 16px;
 }}
-#cardFace {{ font-size: 20px; }}
+#cardFace {{ font-size: {FONT_TITLE}px; }}
 
-#screenTitle, #deckTitle {{ font-size: 20px; font-weight: 600; }}
-#emptyHint, #hintLabel, #markupHint, #kindLabel, #sideLabel, #mistakesLabel {{
+#screenTitle, #deckTitle {{ font-size: {FONT_TITLE}px; font-weight: 600; }}
+#emptyHint, #hintLabel, #markupHint, #kindLabel, #mistakesLabel {{
     color: {p.text_muted};
 }}
-#summaryLabel, #scoreLabel {{ font-size: 18px; font-weight: 600; }}
-#progressLabel, #clockLabel, #statusLabel {{ color: {p.text_muted}; }}
+#sideLabel {{ color: {p.text_muted}; font-size: {FONT_CAPTION}px; }}
+#summaryLabel, #scoreLabel {{ font-size: {FONT_TITLE}px; font-weight: 600; }}
+#progressLabel, #clockLabel, #statusLabel {{
+    color: {p.text_muted};
+    font-size: {FONT_CAPTION}px;
+}}
+#verdictLabel, #flashLabel {{ font-size: {FONT_SUBTITLE}px; font-weight: 600; }}
 
 #faceBlockText {{ font-size: 16px; }}
 #faceBlockLatexError, #faceBlockImageMissing, #faceBlockUnknown {{

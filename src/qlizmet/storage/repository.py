@@ -21,6 +21,12 @@ class DeckSummary:
     title: str
     description: str
     card_count: int
+    mature_count: int = 0
+
+    @property
+    def mastery(self) -> float:
+        """Доля закреплённых карточек (0..1) — прогресс по набору."""
+        return self.mature_count / self.card_count if self.card_count else 0.0
 
 
 @runtime_checkable

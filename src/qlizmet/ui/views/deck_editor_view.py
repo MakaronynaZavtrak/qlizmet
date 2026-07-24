@@ -24,6 +24,8 @@ from PySide6.QtWidgets import (
 from qlizmet.app.deck_service import DeckService
 from qlizmet.core.markup import face_from_markup, face_preview
 from qlizmet.core.models import CardFace
+from qlizmet.ui.icons import set_icon
+from qlizmet.ui.widgets.screen_header import ScreenHeader
 from qlizmet.ui.theme import GAP, PAD
 from qlizmet.ui.views.card_editor_dialog import CardEditorDialog
 from qlizmet.ui.widgets.list_delegate import SUBTITLE_ROLE, TwoLineDelegate
@@ -50,21 +52,20 @@ class DeckEditorView(QWidget):
         self._media_root = media_root
         self._deck_id: str | None = None
 
-        back = QPushButton("← К наборам")
-        back.setObjectName("backButton")
-        back.clicked.connect(self.back_requested.emit)
+        self._header = ScreenHeader(back_text="К наборам", title_name="deckTitle")
+        self._header.back_requested.connect(self.back_requested.emit)
 
         stats = QPushButton("Статистика")
         stats.setObjectName("statsButton")
+        set_icon(stats, "chart")
         stats.clicked.connect(self.stats_requested.emit)
 
-        study = QPushButton("Учить →")
+        study = QPushButton("Учить")
         study.setObjectName("studyButton")
+        set_icon(study, "arrow-right")
         study.clicked.connect(self.study_requested.emit)
         self._study_button = study
 
-        self._title = QLabel()
-        self._title.setObjectName("deckTitle")
 
         self._empty_hint = QLabel("В наборе пока нет карточек — добавьте первую.")
         self._empty_hint.setObjectName("emptyHint")
@@ -78,22 +79,27 @@ class DeckEditorView(QWidget):
 
         add_button = QPushButton("Добавить")
         add_button.setObjectName("addCardButton")
+        set_icon(add_button, "plus")
         add_button.clicked.connect(self._add_via_dialog)
 
         edit_button = QPushButton("Изменить")
         edit_button.setObjectName("editCardButton")
+        set_icon(edit_button, "pencil")
         edit_button.clicked.connect(self._edit_selected_via_dialog)
 
         delete_button = QPushButton("Удалить")
         delete_button.setObjectName("deleteCardButton")
+        set_icon(delete_button, "trash")
         delete_button.clicked.connect(self._delete_selected_via_dialog)
 
-        up_button = QPushButton("↑")
+        up_button = QPushButton()
         up_button.setObjectName("moveUpButton")
+        set_icon(up_button, "arrow-up")
         up_button.clicked.connect(lambda: self.move_selected(-1))
 
-        down_button = QPushButton("↓")
+        down_button = QPushButton()
         down_button.setObjectName("moveDownButton")
+        set_icon(down_button, "arrow-down")
         down_button.clicked.connect(lambda: self.move_selected(+1))
 
         buttons = QHBoxLayout()
@@ -104,16 +110,13 @@ class DeckEditorView(QWidget):
         buttons.addWidget(up_button)
         buttons.addWidget(down_button)
 
-        header = QHBoxLayout()
-        header.addWidget(back)
-        header.addWidget(self._title, stretch=1)
-        header.addWidget(stats)
-        header.addWidget(study)
+        self._header.add_action(stats)
+        self._header.add_action(study)
 
         layout = QVBoxLayout()
         layout.setContentsMargins(PAD, PAD, PAD, PAD)
         layout.setSpacing(GAP)
-        layout.addLayout(header)
+        layout.addWidget(self._header)
         layout.addWidget(self._empty_hint)
         layout.addWidget(self._list, stretch=1)
         layout.addLayout(buttons)
@@ -136,7 +139,7 @@ class DeckEditorView(QWidget):
             return
 
         deck = self._decks.get(self._deck_id)
-        self._title.setText(deck.title)
+        self._header.set_title(deck.title)
         for card in deck.cards:
             item = QListWidgetItem(face_preview(card.front))
             item.setData(CARD_ID_ROLE, card.id)

@@ -26,6 +26,11 @@ class StudyMode(Enum):
     def title(self) -> str:
         return _TITLES[self]
 
+    @property
+    def description(self) -> str:
+        """Короткое пояснение, чем режим занимается."""
+        return _DESCRIPTIONS[self]
+
 
 _TITLES = {
     StudyMode.FLASHCARDS: "Карточки",
@@ -34,6 +39,15 @@ _TITLES = {
     StudyMode.TEST: "Тест",
     StudyMode.MATCH: "Подбор пар",
     StudyMode.GRAVITY: "Гравитация",
+}
+
+_DESCRIPTIONS = {
+    StudyMode.FLASHCARDS: "Листай и переворачивай",
+    StudyMode.LEARN: "Ведёт карточку до «выучено»",
+    StudyMode.WRITE: "Печатай ответ, проверим",
+    StudyMode.TEST: "Билет с оценкой в конце",
+    StudyMode.MATCH: "Сопоставляй пары на время",
+    StudyMode.GRAVITY: "Успей ответить, пока падает",
 }
 
 #: Режимам с выбором варианта нужен хотя бы один отвлекающий ответ.

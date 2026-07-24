@@ -1,16 +1,16 @@
 """Экран статистики по набору.
 
-Показывает, сколько карточек новых, в работе и закреплённых, сколько пора
-повторить сегодня и какова доля верных ответов за всю историю.
+Показывает состояние набора плитками — крупные числа читаются с одного взгляда —
+и составной полосой, где видно соотношение новых, изучаемых и закреплённых
+карточек.
 """
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
-    QFormLayout,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
-    QProgressBar,
     QPushButton,
     QVBoxLayout,
     QWidget,
@@ -18,7 +18,12 @@ from PySide6.QtWidgets import (
 
 from qlizmet.app.stats_service import StatsService
 from qlizmet.core.stats import MATURE_INTERVAL_DAYS, DeckStats
-from qlizmet.ui.theme import GAP, PAD
+from qlizmet.ui.widgets.screen_header import ScreenHeader
+from qlizmet.ui.theme import GAP, PAD, current_palette
+from qlizmet.ui.widgets.metric_tile import MetricTile
+from qlizmet.ui.widgets.segmented_bar import Segment, SegmentedBar
+
+COLUMNS = 3
 
 
 class StatsView(QWidget):
@@ -36,42 +41,30 @@ class StatsView(QWidget):
         self._stats = stats
         self._deck_id: str | None = None
 
-        back = QPushButton("← К набору")
-        back.setObjectName("backButton")
-        back.clicked.connect(self.back_requested.emit)
+        header = ScreenHeader("Статистика", back_text="К набору")
+        header.back_requested.connect(self.back_requested.emit)
 
-        title = QLabel("Статистика")
-        title.setObjectName("screenTitle")
+        self._bar = SegmentedBar()
+        self._legend = QLabel()
+        self._legend.setObjectName("legendLabel")
+        self._legend.setWordWrap(True)
 
-        header = QHBoxLayout()
-        header.addWidget(back)
-        header.addWidget(title, stretch=1)
+        self._tiles = {
+            "total": MetricTile("Всего карточек", value_name="totalValue"),
+            "new": MetricTile("Новых", value_name="newValue"),
+            "learning": MetricTile("В работе", value_name="learningValue"),
+            "mature": MetricTile(
+                f"Закреплено (интервал ≥ {MATURE_INTERVAL_DAYS} дн.)",
+                value_name="matureValue",
+            ),
+            "due": MetricTile("Пора повторить", value_name="dueValue", accent=True),
+            "accuracy": MetricTile("Верных ответов", value_name="accuracyValue"),
+        }
 
-        self._bar = QProgressBar()
-        self._bar.setObjectName("masteryBar")
-        self._bar.setRange(0, 100)
-        self._bar.setFormat("закреплено %p%")
-
-        self._total = QLabel()
-        self._total.setObjectName("totalValue")
-        self._new = QLabel()
-        self._new.setObjectName("newValue")
-        self._learning = QLabel()
-        self._learning.setObjectName("learningValue")
-        self._mature = QLabel()
-        self._mature.setObjectName("matureValue")
-        self._due = QLabel()
-        self._due.setObjectName("dueValue")
-        self._accuracy = QLabel()
-        self._accuracy.setObjectName("accuracyValue")
-
-        form = QFormLayout()
-        form.addRow("Всего карточек:", self._total)
-        form.addRow("Новых:", self._new)
-        form.addRow("В работе:", self._learning)
-        form.addRow(f"Закреплено (интервал ≥ {MATURE_INTERVAL_DAYS} дн.):", self._mature)
-        form.addRow("Пора повторить:", self._due)
-        form.addRow("Верных ответов:", self._accuracy)
+        grid = QGridLayout()
+        grid.setSpacing(GAP)
+        for index, tile in enumerate(self._tiles.values()):
+            grid.addWidget(tile, index // COLUMNS, index % COLUMNS)
 
         self._hint = QLabel()
         self._hint.setObjectName("hintLabel")
@@ -81,10 +74,11 @@ class StatsView(QWidget):
         layout = QVBoxLayout()
         layout.setContentsMargins(PAD, PAD, PAD, PAD)
         layout.setSpacing(GAP)
-        layout.addLayout(header)
+        layout.addWidget(header)
         layout.addStretch(1)
         layout.addWidget(self._bar)
-        layout.addLayout(form)
+        layout.addWidget(self._legend)
+        layout.addLayout(grid)
         layout.addWidget(self._hint)
         layout.addStretch(1)
         self.setLayout(layout)
@@ -109,19 +103,36 @@ class StatsView(QWidget):
     def hint_text(self) -> str:
         return self._hint.text()
 
+    def legend_text(self) -> str:
+        return self._legend.text()
+
+    def tile(self, name: str) -> MetricTile:
+        return self._tiles[name]
+
     # --- внутреннее ---
 
     def _render(self, stats: DeckStats) -> None:
-        self._bar.setValue(round(stats.mastery * 100))
-        self._total.setText(str(stats.total))
-        self._new.setText(str(stats.new))
-        self._learning.setText(str(stats.learning))
-        self._mature.setText(str(stats.mature))
-        self._due.setText(str(stats.due))
-        self._accuracy.setText(
-            "пока нет ответов"
-            if stats.reviews == 0
-            else f"{round(stats.accuracy * 100)}% ({stats.correct} из {stats.reviews})"
+        palette = current_palette()
+
+        self._bar.set_segments(
+            [
+                Segment(stats.mature, palette.accent, "закреплено"),
+                Segment(stats.learning, palette.accent_hover, "в работе"),
+                Segment(stats.new, palette.text_muted, "новых"),
+            ],
+            empty_color=palette.surface_alt,
+        )
+        self._legend.setText(
+            f"закреплено {stats.mature} · в работе {stats.learning} · новых {stats.new}"
+        )
+
+        self._tiles["total"].set_value(str(stats.total))
+        self._tiles["new"].set_value(str(stats.new))
+        self._tiles["learning"].set_value(str(stats.learning))
+        self._tiles["mature"].set_value(str(stats.mature))
+        self._tiles["due"].set_value(str(stats.due))
+        self._tiles["accuracy"].set_value(
+            "—" if stats.reviews == 0 else f"{round(stats.accuracy * 100)}%"
         )
 
         if stats.total == 0:

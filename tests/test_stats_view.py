@@ -53,7 +53,7 @@ def test_no_reviews_message(env, qt_host) -> None:
     view = StatsView(stats, parent=qt_host)
     view.load(deck.id)
 
-    assert "пока нет ответов" in _value(view, "accuracyValue")
+    assert _value(view, "accuracyValue") == "—"   # ответов ещё не было
     assert "не изучался" in view.hint_text()
 
 
@@ -82,7 +82,7 @@ def test_accuracy_after_answers(env, qt_host) -> None:
     assert _value(view, "learningValue") == "2"
 
 
-def test_mastery_bar_reflects_mature_share(env, qt_host) -> None:
+def test_segmented_bar_reflects_composition(env, qt_host) -> None:
     library, progress, stats, _ = env
     deck = library.import_tsv("Франция\tПариж\nИталия\tРим", "Гео")
     progress.save(CardProgress(deck.cards[0].id, interval_days=30))
@@ -91,7 +91,22 @@ def test_mastery_bar_reflects_mature_share(env, qt_host) -> None:
     view.load(deck.id)
 
     assert _value(view, "matureValue") == "1"
-    assert view.findChild(object, "masteryBar").value() == 50
+    bar = view.findChild(object, "segmentedBar")
+    assert bar.total == 2                       # обе карточки попали в полосу
+    assert {s.value for s in bar.segments()} == {1}  # одна закреплена, одна новая
+
+
+def test_legend_describes_composition(env, qt_host) -> None:
+    library, progress, stats, _ = env
+    deck = library.import_tsv("Франция\tПариж\nИталия\tРим", "Гео")
+    progress.save(CardProgress(deck.cards[0].id, interval_days=30))
+
+    view = StatsView(stats, parent=qt_host)
+    view.load(deck.id)
+
+    legend = view.legend_text()
+    assert "закреплено 1" in legend
+    assert "новых 1" in legend
 
 
 def test_refresh_picks_up_new_answers(env, qt_host) -> None:
@@ -100,11 +115,11 @@ def test_refresh_picks_up_new_answers(env, qt_host) -> None:
 
     view = StatsView(stats, parent=qt_host)
     view.load(deck.id)
-    assert "пока нет ответов" in _value(view, "accuracyValue")
+    assert _value(view, "accuracyValue") == "—"
 
     StudyService(progress).record(deck.cards[0].id, Grade.GOOD, mode="write")
     view.refresh()
-    assert "100%" in _value(view, "accuracyValue")
+    assert _value(view, "accuracyValue") == "100%"
 
 
 def test_view_without_service_degrades(qt_host) -> None:

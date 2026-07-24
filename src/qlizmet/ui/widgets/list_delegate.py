@@ -21,10 +21,14 @@ from qlizmet.ui.theme import current_palette
 
 #: Роль, в которой лежит вторая строка элемента.
 SUBTITLE_ROLE = Qt.ItemDataRole.UserRole + 100
+#: Роль с долей выполнения (0..1). Если задана — под строкой рисуется полоска.
+PROGRESS_ROLE = Qt.ItemDataRole.UserRole + 101
 
 PADDING_X = 12
 PADDING_Y = 9
 LINE_GAP = 3
+BAR_HEIGHT = 3
+BAR_GAP = 7
 
 
 class TwoLineDelegate(QStyledItemDelegate):
@@ -85,7 +89,33 @@ class TwoLineDelegate(QStyledItemDelegate):
             ),
         )
 
+        progress = index.data(PROGRESS_ROLE)
+        if progress is not None:
+            self._draw_progress(painter, rect, float(progress), palette)
+
         painter.restore()
+
+    def _draw_progress(self, painter, rect, progress, palette) -> None:
+        """Тонкая полоска выполнения по нижнему краю строки."""
+        bar = QRect(
+            rect.left(),
+            rect.bottom() - BAR_HEIGHT + 1,
+            rect.width(),
+            BAR_HEIGHT,
+        )
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(palette.surface_alt))
+        painter.drawRoundedRect(bar, BAR_HEIGHT / 2, BAR_HEIGHT / 2)
+
+        filled = max(0.0, min(1.0, progress))
+        if filled <= 0:
+            return
+        painter.setBrush(QColor(palette.accent))
+        painter.drawRoundedRect(
+            QRect(bar.left(), bar.top(), int(bar.width() * filled), bar.height()),
+            BAR_HEIGHT / 2,
+            BAR_HEIGHT / 2,
+        )
 
     def sizeHint(
         self, option: QStyleOptionViewItem, index: QModelIndex
@@ -94,4 +124,7 @@ class TwoLineDelegate(QStyledItemDelegate):
         if not index.data(SUBTITLE_ROLE):
             return base
         line = option.fontMetrics.height()
-        return QSize(base.width(), line * 2 + LINE_GAP + PADDING_Y * 2)
+        height = line * 2 + LINE_GAP + PADDING_Y * 2
+        if index.data(PROGRESS_ROLE) is not None:
+            height += BAR_HEIGHT + BAR_GAP
+        return QSize(base.width(), height)
