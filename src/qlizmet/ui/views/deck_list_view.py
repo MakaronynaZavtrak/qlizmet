@@ -23,9 +23,14 @@ from PySide6.QtWidgets import (
 
 from qlizmet.app.library_service import LibraryService
 from qlizmet.ui.icons import set_icon
+from qlizmet.ui.widgets.screen_header import ScreenHeader
 from qlizmet.ui.theme import Theme
 from qlizmet.ui.theme import GAP, PAD
-from qlizmet.ui.widgets.list_delegate import SUBTITLE_ROLE, TwoLineDelegate
+from qlizmet.ui.widgets.list_delegate import (
+    PROGRESS_ROLE,
+    SUBTITLE_ROLE,
+    TwoLineDelegate,
+)
 
 DECK_ID_ROLE = Qt.ItemDataRole.UserRole
 
@@ -40,8 +45,7 @@ class DeckListView(QWidget):
         super().__init__(parent)
         self._library = library
 
-        title = QLabel("Мои наборы")
-        title.setObjectName("screenTitle")
+        header = ScreenHeader("Мои наборы", back_text=None)
 
         self._theme_button = QPushButton()
         self._theme_button.setObjectName("themeButton")
@@ -84,14 +88,12 @@ class DeckListView(QWidget):
         buttons.addWidget(delete_button)
         buttons.addWidget(open_button)
 
-        header = QHBoxLayout()
-        header.addWidget(title, stretch=1)
-        header.addWidget(self._theme_button)
+        header.add_action(self._theme_button)
 
         layout = QVBoxLayout()
         layout.setContentsMargins(PAD, PAD, PAD, PAD)
         layout.setSpacing(GAP)
-        layout.addLayout(header)
+        layout.addWidget(header)
         layout.addWidget(self._empty_hint)
         layout.addWidget(self._list, stretch=1)
         layout.addLayout(buttons)
@@ -118,6 +120,8 @@ class DeckListView(QWidget):
             item = QListWidgetItem(summary.title)
             item.setData(DECK_ID_ROLE, summary.id)
             item.setData(SUBTITLE_ROLE, _deck_subtitle(summary))
+            if summary.card_count:
+                item.setData(PROGRESS_ROLE, summary.mastery)
             if summary.description:
                 item.setToolTip(summary.description)
             self._list.addItem(item)
@@ -201,4 +205,6 @@ class DeckListView(QWidget):
 def _deck_subtitle(summary) -> str:
     """Вторая строка набора: количество карточек и описание, если оно есть."""
     cards = f"{summary.card_count} карт."
+    if summary.card_count:
+        cards += f" · закреплено {round(summary.mastery * 100)}%"
     return f"{cards} · {summary.description}" if summary.description else cards

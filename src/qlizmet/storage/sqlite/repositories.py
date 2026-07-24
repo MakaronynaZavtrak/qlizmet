@@ -5,6 +5,8 @@ import sqlite3
 from collections.abc import Sequence
 
 from qlizmet.core.models import Card, CardProgress, Deck, ReviewRecord
+from qlizmet.core.stats import MATURE_INTERVAL_DAYS
+from qlizmet.storage.repository import DeckSummary
 from qlizmet.storage.serialization import (
     dt_from_iso,
     dt_to_iso,
@@ -13,7 +15,6 @@ from qlizmet.storage.serialization import (
     tags_from_json,
     tags_to_json,
 )
-from qlizmet.storage.repository import DeckSummary
 
 
 class SqliteDeckRepository:
@@ -123,12 +124,19 @@ class SqliteDeckRepository:
         """Сводка по всем наборам одним запросом, без загрузки карточек."""
         rows = self.conn.execute(
             """
-            SELECT d.id, d.title, d.description, COUNT(c.id) AS card_count
+            SELECT
+                d.id,
+                d.title,
+                d.description,
+                COUNT(c.id) AS card_count,
+                COALESCE(SUM(p.interval_days >= ?), 0) AS mature_count
             FROM decks d
-                     LEFT JOIN cards c ON c.deck_id = d.id
+            LEFT JOIN cards c ON c.deck_id = d.id
+            LEFT JOIN card_progress p ON p.card_id = c.id
             GROUP BY d.id, d.title, d.description
             ORDER BY d.title
-            """
+            """,
+            (MATURE_INTERVAL_DAYS,),
         )
         return [
             DeckSummary(
@@ -136,6 +144,7 @@ class SqliteDeckRepository:
                 title=r["title"],
                 description=r["description"],
                 card_count=r["card_count"],
+                mature_count=r["mature_count"],
             )
             for r in rows
         ]

@@ -32,7 +32,7 @@ from qlizmet.core.study import (
     LearnSession,
     QuestionType,
 )
-from qlizmet.ui.icons import set_icon
+from qlizmet.ui.widgets.screen_header import ScreenHeader
 from qlizmet.ui.theme import GAP, PAD, set_state
 from qlizmet.ui.widgets.face_view import FaceView
 
@@ -56,18 +56,14 @@ class LearnView(QWidget):
         self._session: LearnSession | None = None
         self._pending: LearnFeedback | None = None
 
-        back = QPushButton("Выйти")
-        back.setObjectName("backButton")
-        set_icon(back, "arrow-left")
-        back.clicked.connect(self.back_requested.emit)
+        header = ScreenHeader(back_text="Выйти")
+        header.back_requested.connect(self.back_requested.emit)
 
         self._progress = QLabel()
         self._progress.setObjectName("progressLabel")
         self._progress.setAlignment(Qt.AlignmentFlag.AlignRight)
 
-        header = QHBoxLayout()
-        header.addWidget(back)
-        header.addWidget(self._progress, stretch=1)
+        header.add_action(self._progress)
 
         self._prompt = FaceView(media_root=media_root)
         self._prompt.setObjectName("promptFace")
@@ -115,7 +111,7 @@ class LearnView(QWidget):
         layout = QVBoxLayout()
         layout.setContentsMargins(PAD, PAD, PAD, PAD)
         layout.setSpacing(GAP)
-        layout.addLayout(header)
+        layout.addWidget(header)
         layout.addStretch(1)
         layout.addWidget(self._prompt)
         layout.addWidget(self._choices_box)

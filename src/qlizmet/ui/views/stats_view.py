@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
 
 from qlizmet.app.stats_service import StatsService
 from qlizmet.core.stats import MATURE_INTERVAL_DAYS, DeckStats
-from qlizmet.ui.icons import set_icon
+from qlizmet.ui.widgets.screen_header import ScreenHeader
 from qlizmet.ui.theme import GAP, PAD, current_palette
 from qlizmet.ui.widgets.metric_tile import MetricTile
 from qlizmet.ui.widgets.segmented_bar import Segment, SegmentedBar
@@ -41,17 +41,8 @@ class StatsView(QWidget):
         self._stats = stats
         self._deck_id: str | None = None
 
-        back = QPushButton("К набору")
-        back.setObjectName("backButton")
-        set_icon(back, "arrow-left")
-        back.clicked.connect(self.back_requested.emit)
-
-        title = QLabel("Статистика")
-        title.setObjectName("screenTitle")
-
-        header = QHBoxLayout()
-        header.addWidget(back)
-        header.addWidget(title, stretch=1)
+        header = ScreenHeader("Статистика", back_text="К набору")
+        header.back_requested.connect(self.back_requested.emit)
 
         self._bar = SegmentedBar()
         self._legend = QLabel()
@@ -83,7 +74,7 @@ class StatsView(QWidget):
         layout = QVBoxLayout()
         layout.setContentsMargins(PAD, PAD, PAD, PAD)
         layout.setSpacing(GAP)
-        layout.addLayout(header)
+        layout.addWidget(header)
         layout.addStretch(1)
         layout.addWidget(self._bar)
         layout.addWidget(self._legend)

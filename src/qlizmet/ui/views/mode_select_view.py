@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
 
 from qlizmet.app.deck_service import DeckService
 from qlizmet.core.study import Direction, StudyMode, mode_availability
-from qlizmet.ui.icons import set_icon
+from qlizmet.ui.widgets.screen_header import ScreenHeader
 from qlizmet.ui.theme import GAP, PAD
 from qlizmet.ui.widgets.mode_card import ModeCard
 
@@ -55,17 +55,8 @@ class ModeSelectView(QWidget):
         self._implemented = implemented if implemented is not None else set(StudyMode)
         self._deck_id: str | None = None
 
-        back = QPushButton("К набору")
-        back.setObjectName("backButton")
-        set_icon(back, "arrow-left")
-        back.clicked.connect(self.back_requested.emit)
-
-        self._title = QLabel()
-        self._title.setObjectName("deckTitle")
-
-        header = QHBoxLayout()
-        header.addWidget(back)
-        header.addWidget(self._title, stretch=1)
+        self._header = ScreenHeader(back_text="К набору", title_name="deckTitle")
+        self._header.back_requested.connect(self.back_requested.emit)
 
         grid = QGridLayout()
         grid.setSpacing(GAP)
@@ -83,7 +74,7 @@ class ModeSelectView(QWidget):
         layout = QVBoxLayout()
         layout.setContentsMargins(PAD, PAD, PAD, PAD)
         layout.setSpacing(GAP)
-        layout.addLayout(header)
+        layout.addWidget(self._header)
         layout.addStretch(1)
         layout.addLayout(grid)
         layout.addStretch(1)
@@ -96,7 +87,7 @@ class ModeSelectView(QWidget):
     def load(self, deck_id: str, direction: Direction = Direction.FRONT_TO_BACK) -> None:
         self._deck_id = deck_id
         deck = self._decks.get(deck_id)
-        self._title.setText(deck.title)
+        self._header.set_title(deck.title)
 
         reasons = mode_availability(deck.cards, direction)
         for mode, card in self._cards.items():

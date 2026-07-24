@@ -26,7 +26,7 @@ from PySide6.QtWidgets import (
 from qlizmet.core.markup import face_preview
 from qlizmet.core.models import Card
 from qlizmet.core.study import MatchGame, MatchOutcome
-from qlizmet.ui.icons import set_icon
+from qlizmet.ui.widgets.screen_header import ScreenHeader
 from qlizmet.ui.theme import GAP, PAD, set_state
 
 TICK_MS = 100
@@ -59,18 +59,14 @@ class MatchView(QWidget):
         self._timer.setInterval(TICK_MS)
         self._timer.timeout.connect(self.tick)
 
-        back = QPushButton("Выйти")
-        back.setObjectName("backButton")
-        set_icon(back, "arrow-left")
-        back.clicked.connect(self._leave)
+        header = ScreenHeader(back_text="Выйти")
+        header.back_requested.connect(self._leave)
 
         self._clock = QLabel("0.0 с")
         self._clock.setObjectName("clockLabel")
         self._clock.setAlignment(Qt.AlignmentFlag.AlignRight)
 
-        header = QHBoxLayout()
-        header.addWidget(back)
-        header.addWidget(self._clock, stretch=1)
+        header.add_action(self._clock)
 
         self._grid_host = QWidget()
         self._grid_host.setObjectName("tileGrid")
@@ -83,7 +79,7 @@ class MatchView(QWidget):
         layout = QVBoxLayout()
         layout.setContentsMargins(PAD, PAD, PAD, PAD)
         layout.setSpacing(GAP)
-        layout.addLayout(header)
+        layout.addWidget(header)
         layout.addWidget(self._grid_host, stretch=1)
         layout.addWidget(self._summary)
         self.setLayout(layout)

@@ -24,7 +24,7 @@ from PySide6.QtWidgets import (
 
 from qlizmet.core.models import Card
 from qlizmet.core.study import Direction, GravityGame
-from qlizmet.ui.icons import set_icon
+from qlizmet.ui.widgets.screen_header import ScreenHeader
 from qlizmet.ui.theme import GAP, PAD, set_state
 from qlizmet.ui.widgets.face_view import FaceView
 
@@ -58,18 +58,14 @@ class GravityView(QWidget):
         self._timer.setInterval(TICK_MS)
         self._timer.timeout.connect(self.tick)
 
-        back = QPushButton("Выйти")
-        back.setObjectName("backButton")
-        set_icon(back, "arrow-left")
-        back.clicked.connect(self._leave)
+        header = ScreenHeader(back_text="Выйти")
+        header.back_requested.connect(self._leave)
 
         self._status = QLabel()
         self._status.setObjectName("statusLabel")
         self._status.setAlignment(Qt.AlignmentFlag.AlignRight)
 
-        header = QHBoxLayout()
-        header.addWidget(back)
-        header.addWidget(self._status, stretch=1)
+        header.add_action(self._status)
 
         # область падения: термин зажат между двумя распорками,
         # соотношение которых и создаёт эффект движения вниз
@@ -108,7 +104,7 @@ class GravityView(QWidget):
         layout = QVBoxLayout()
         layout.setContentsMargins(PAD, PAD, PAD, PAD)
         layout.setSpacing(GAP)
-        layout.addLayout(header)
+        layout.addWidget(header)
         layout.addWidget(self._fall_area, stretch=1)
         layout.addWidget(self._flash)
         layout.addWidget(self._answer_edit)
