@@ -11,7 +11,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import date
 from pathlib import Path
 
@@ -29,6 +29,10 @@ class Settings:
     reminders_enabled: bool = True
     #: Дата последнего напоминания в формате ISO; пусто — ещё не напоминали.
     last_reminder_date: str = ""
+    #: Закрытие окна сворачивает приложение в трей, а не завершает его.
+    minimize_to_tray: bool = True
+    #: Показывали ли уже разовое пояснение про сворачивание.
+    tray_notice_shown: bool = False
 
     @property
     def last_reminder(self) -> date | None:
@@ -38,11 +42,10 @@ class Settings:
             return None
 
     def with_reminder_sent(self, moment: date) -> "Settings":
-        return Settings(
-            theme=self.theme,
-            reminders_enabled=self.reminders_enabled,
-            last_reminder_date=moment.isoformat(),
-        )
+        return replace(self, last_reminder_date=moment.isoformat())
+
+    def with_tray_notice_shown(self) -> "Settings":
+        return replace(self, tray_notice_shown=True)
 
 
 def settings_path() -> Path:
@@ -63,6 +66,8 @@ def load_settings(path: Path | None = None) -> Settings:
     theme = data.get("theme")
     enabled = data.get("reminders_enabled")
     last = data.get("last_reminder_date")
+    minimize = data.get("minimize_to_tray")
+    notice = data.get("tray_notice_shown")
     return Settings(
         theme=theme if isinstance(theme, str) else defaults.theme,
         reminders_enabled=(
@@ -70,6 +75,12 @@ def load_settings(path: Path | None = None) -> Settings:
         ),
         last_reminder_date=(
             last if isinstance(last, str) else defaults.last_reminder_date
+        ),
+        minimize_to_tray=(
+            minimize if isinstance(minimize, bool) else defaults.minimize_to_tray
+        ),
+        tray_notice_shown=(
+            notice if isinstance(notice, bool) else defaults.tray_notice_shown
         ),
     )
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QApplication, QMainWindow, QStackedWidget, QWidget
 
 from qlizmet.app.deck_service import DeckService
@@ -43,6 +44,9 @@ IMPLEMENTED_MODES = set(StudyMode)
 class MainWindow(QMainWindow):
     """Оболочка: держит экраны в стопке и переключает их."""
 
+    #: Показали разовое пояснение про сворачивание — его стоит запомнить.
+    tray_notice_shown = Signal()
+
     def __init__(
         self,
         library: LibraryService,
@@ -51,6 +55,8 @@ class MainWindow(QMainWindow):
         stats: StatsService | None = None,
         scheduler: SchedulerService | None = None,
         *,
+        tray=None,
+        minimize_to_tray: bool = False,
         media_root: Path | str | None = None,
         theme: Theme = Theme.DARK,
         parent: QWidget | None = None,
@@ -63,6 +69,9 @@ class MainWindow(QMainWindow):
         self._library = library
         self._decks = decks
         self._scheduler = scheduler
+        self._tray = tray
+        self._minimize_to_tray = minimize_to_tray
+        self._tray_notice_pending = True
         self._direction = Direction.FRONT_TO_BACK
 
         self._stack = QStackedWidget()
@@ -195,6 +204,8 @@ class MainWindow(QMainWindow):
         save_settings(Settings(theme=self._theme.value))
         refresh_icons(self)  # иконки нарисованы цветом старой темы — перерисуем
         self._modes.refresh_icons()  # у карточек режимов иконка своя, картинкой
+        if self._tray is not None:
+            self._tray.refresh_icon()
         self._refresh_current()
         return self._theme
 
@@ -204,6 +215,46 @@ class MainWindow(QMainWindow):
         refresh = getattr(current, "refresh", None)
         if callable(refresh):
             refresh()
+
+    # --- жизненный цикл окна ---
+
+    @property
+    def minimizes_to_tray(self) -> bool:
+        """Свернётся ли окно в трей вместо выхода при закрытии."""
+        return self._minimize_to_tray and self._tray is not None
+
+    def set_tray_notice_pending(self, pending: bool) -> None:
+        """Нужно ли при первом сворачивании пояснить, что приложение не закрылось."""
+        self._tray_notice_pending = pending
+
+    def closeEvent(self, event) -> None:  # noqa: N802 - имя задано Qt
+        """Крестик сворачивает в трей, если так настроено, иначе закрывает.
+
+        Разовое пояснение обязательно: молча исчезнувшее окно человек примет за
+        зависшую или закрытую программу и пойдёт запускать её заново.
+        """
+        if not self.minimizes_to_tray:
+            super().closeEvent(event)
+            return
+
+        event.ignore()
+        self.hide()
+        if self._tray_notice_pending:
+            self._tray_notice_pending = False
+            self._tray.notify_hidden()
+            self.tray_notice_shown.emit()
+
+    def restore_from_tray(self) -> None:
+        """Показать окно обратно по запросу из трея."""
+        self.showNormal()
+        self.raise_()
+        self.activateWindow()
+
+    def update_tray_pending(self) -> None:
+        """Обновить счётчик в трее по текущему состоянию наборов."""
+        if self._tray is None or self._scheduler is None:
+            return
+        self._tray.set_pending(self._scheduler.total_pending())
 
     # --- навигация ---
 
