@@ -13,6 +13,25 @@ from pathlib import Path
 
 PROJECT = Path(__file__).resolve().parent.parent
 SPEC = PROJECT / "packaging" / "qlizmet.spec"
+VERSION_ISS = PROJECT / "packaging" / "windows" / "version.iss"
+
+
+def app_version() -> str:
+    """Версия приложения из самого пакета — единственный источник правды."""
+    sys.path.insert(0, str(PROJECT / "src"))
+    from qlizmet import __version__
+
+    return __version__
+
+
+def write_version_include() -> None:
+    """Передать версию установщику, чтобы она не разъезжалась с приложением."""
+    VERSION_ISS.parent.mkdir(parents=True, exist_ok=True)
+    VERSION_ISS.write_text(
+        f'; Файл создаётся автоматически, правьте версию в пакете.\n'
+        f'#define AppVersion "{app_version()}"\n',
+        encoding="utf-8",
+    )
 
 
 def main() -> int:
@@ -22,6 +41,9 @@ def main() -> int:
         except ImportError:
             print("Не найден PyInstaller. Установите: pip install pyinstaller")
             return 1
+
+    write_version_include()
+    print(f"Версия: {app_version()}")
 
     command = [
         sys.executable,

@@ -15,3 +15,7 @@ env/
 *.db
 *.sqlite3
 media/
+
+# создаётся сборкой
+packaging/windows/version.iss
+packaging/windows/output/
