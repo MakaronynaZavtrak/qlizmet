@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=qlizmet
+Comment=Приложение для заучивания карточек
+Comment[en]=Flashcard learning application
+Exec=qlizmet
+Icon=qlizmet
+Terminal=false
+Categories=Education;
+StartupWMClass=qlizmet

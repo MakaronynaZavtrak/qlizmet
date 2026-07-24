@@ -1,0 +1,6 @@
+#!/bin/sh
+# Точка входа AppImage: запускаем бинарь PyInstaller изнутри AppDir.
+# Именно AppRun исполняется при запуске .AppImage — Exec= из .desktop нужен
+# только для интеграции в меню, к запуску отношения не имеет.
+HERE="$(dirname "$(readlink -f "${0}")")"
+exec "${HERE}/usr/bin/qlizmet" "$@"
