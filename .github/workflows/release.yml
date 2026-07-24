@@ -1,0 +1,104 @@
+name: Release
+
+# Собирает установочные пакеты под каждую ОС на её родном раннере (PyInstaller
+# не кросс-компилирует) и прикладывает их к GitHub Release.
+#
+#   - pull request           -> собирает Windows+Linux как проверки, без релиза;
+#   - push тега вида v0.1.0   -> собирает и публикует релиз;
+#   - запуск вручную (Actions -> Run workflow) -> только собирает артефакты,
+#     без публикации, удобно проверить сборку не создавая релиз.
+on:
+  pull_request:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install project and PyInstaller
+        run: |
+          python -m pip install --upgrade pip
+          pip install .
+          pip install pyinstaller
+      - name: Build exe (PyInstaller)
+        run: python packaging/build.py
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+      - name: Build installer (Inno Setup)
+        run: '& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" packaging\windows\qlizmet.iss'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: packaging/windows/output/*.exe
+
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install system libraries for Qt
+        run: sudo apt-get update && sudo apt-get install -y libegl1 libgl1 libxkbcommon0 libdbus-1-3
+      - name: Install project and PyInstaller
+        run: |
+          python -m pip install --upgrade pip
+          pip install .
+          pip install pyinstaller
+      - name: Build binary (PyInstaller)
+        run: python packaging/build.py
+      - name: Build AppImage
+        run: bash packaging/linux/build_appimage.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: dist/*.AppImage
+
+  # macOS появится в следующем коммите: нужен блок BUNDLE в qlizmet.spec
+  # и packaging/macos/build_dmg.sh. После этого раскомментируй джобу и
+  # добавь macos в needs у release ниже.
+  #
+  # macos:
+  #   runs-on: macos-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-python@v5
+  #       with:
+  #         python-version: "3.12"
+  #     - name: Install project and PyInstaller
+  #       run: |
+  #         python -m pip install --upgrade pip
+  #         pip install .
+  #         pip install pyinstaller
+  #     - name: Build app (PyInstaller)
+  #       run: python packaging/build.py
+  #     - name: Build dmg
+  #       run: bash packaging/macos/build_dmg.sh
+  #     - uses: actions/upload-artifact@v4
+  #       with:
+  #         name: macos
+  #         path: dist/*.dmg
+
+  release:
+    # Публикуем только когда запуск по тегу; ручной прогон просто собирает.
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [windows, linux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write            # право создать релиз и залить в него файлы
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*
