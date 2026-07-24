@@ -2,13 +2,17 @@
 
 Простой JSON-файл рядом с базой. Чистая стандартная библиотека — прикладной слой
 не должен зависеть от Qt, поэтому ни ``QSettings``, ни реестра здесь нет.
-Повреждённый или отсутствующий файл не считается ошибкой: берутся значения по
-умолчанию, иначе приложение не запустилось бы из-за одной битой строки.
+
+Файл читается снисходительно: отсутствующие, лишние или испорченные поля не
+считаются ошибкой, вместо них берутся значения по умолчанию. Иначе одна кривая
+строка мешала бы запуску, а старый файл настроек ломался бы при каждом
+добавлении новой опции.
 """
 from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass
+from datetime import date
 from pathlib import Path
 
 from qlizmet.app.paths import app_data_dir
@@ -22,6 +26,23 @@ class Settings:
     """Настройки пользователя."""
 
     theme: str = DEFAULT_THEME
+    reminders_enabled: bool = True
+    #: Дата последнего напоминания в формате ISO; пусто — ещё не напоминали.
+    last_reminder_date: str = ""
+
+    @property
+    def last_reminder(self) -> date | None:
+        try:
+            return date.fromisoformat(self.last_reminder_date)
+        except ValueError:
+            return None
+
+    def with_reminder_sent(self, moment: date) -> "Settings":
+        return Settings(
+            theme=self.theme,
+            reminders_enabled=self.reminders_enabled,
+            last_reminder_date=moment.isoformat(),
+        )
 
 
 def settings_path() -> Path:
@@ -37,8 +58,20 @@ def load_settings(path: Path | None = None) -> Settings:
         return Settings()
     if not isinstance(data, dict):
         return Settings()
+
+    defaults = Settings()
     theme = data.get("theme")
-    return Settings(theme=theme if isinstance(theme, str) else DEFAULT_THEME)
+    enabled = data.get("reminders_enabled")
+    last = data.get("last_reminder_date")
+    return Settings(
+        theme=theme if isinstance(theme, str) else defaults.theme,
+        reminders_enabled=(
+            enabled if isinstance(enabled, bool) else defaults.reminders_enabled
+        ),
+        last_reminder_date=(
+            last if isinstance(last, str) else defaults.last_reminder_date
+        ),
+    )
 
 
 def save_settings(settings: Settings, path: Path | None = None) -> None:
