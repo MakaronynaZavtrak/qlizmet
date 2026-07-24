@@ -7,6 +7,7 @@ from PySide6.QtWidgets import QApplication, QMainWindow, QStackedWidget, QWidget
 
 from qlizmet.app.deck_service import DeckService
 from qlizmet.app.library_service import LibraryService
+from qlizmet.app.scheduler_service import SchedulerService
 from qlizmet.app.stats_service import StatsService
 from qlizmet.app.study_service import StudyService
 from qlizmet.app.settings import Settings, save_settings
@@ -48,6 +49,7 @@ class MainWindow(QMainWindow):
         decks: DeckService,
         study: StudyService | None = None,
         stats: StatsService | None = None,
+        scheduler: SchedulerService | None = None,
         *,
         media_root: Path | str | None = None,
         theme: Theme = Theme.DARK,
@@ -60,6 +62,7 @@ class MainWindow(QMainWindow):
 
         self._library = library
         self._decks = decks
+        self._scheduler = scheduler
         self._direction = Direction.FRONT_TO_BACK
 
         self._stack = QStackedWidget()
@@ -76,7 +79,7 @@ class MainWindow(QMainWindow):
         self._deck_editor.study_requested.connect(self.show_modes)
         self._deck_editor.stats_requested.connect(self.show_stats)
 
-        self._modes = ModeSelectView(decks, IMPLEMENTED_MODES)
+        self._modes = ModeSelectView(decks, IMPLEMENTED_MODES, scheduler=scheduler)
         self._modes.setObjectName(PAGE_MODES)
         self._modes.back_requested.connect(self._back_to_editor)
         self._modes.mode_selected.connect(self.start_mode)
@@ -234,7 +237,8 @@ class MainWindow(QMainWindow):
         if deck_id is None:
             self.show_deck_list()
             return
-        cards = self._decks.get(deck_id).cards
+        # очередь берём с экрана режимов: она уже учитывает выбранную область
+        cards = self._modes.scoped_cards() or self._decks.get(deck_id).cards
         mode = StudyMode(mode_value)
 
         if mode is StudyMode.FLASHCARDS:

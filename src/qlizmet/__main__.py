@@ -14,6 +14,7 @@ def main() -> int:
 
     from qlizmet.app.deck_service import DeckService
     from qlizmet.app.library_service import LibraryService
+    from qlizmet.app.scheduler_service import SchedulerService
     from qlizmet.app.stats_service import StatsService
     from qlizmet.app.study_service import StudyService
     from qlizmet.app.paths import database_path, media_dir
@@ -43,6 +44,7 @@ def main() -> int:
         DeckService(repository),
         StudyService(progress),
         StatsService(repository, progress),
+        SchedulerService(repository, progress),
         media_root=media_dir(),
         theme=theme,
     )

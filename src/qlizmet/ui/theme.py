@@ -151,6 +151,14 @@ QPushButton[role="primary"] {{
 QPushButton[role="primary"]:hover {{ background: {p.accent_hover}; border-color: {p.accent_hover}; }}
 QPushButton[role="primary"]:disabled {{ background: {p.surface_alt}; color: {p.text_muted}; border-color: {p.border}; }}
 
+QPushButton:checked {{
+    background: {p.accent};
+    color: {p.on_accent};
+    border-color: {p.accent};
+    font-weight: 600;
+}}
+QPushButton:checked:hover {{ background: {p.accent_hover}; }}
+
 QPushButton[role="danger"] {{ color: {p.danger}; border-color: {p.danger}; }}
 QPushButton[role="danger"]:hover {{ background: {p.surface_alt}; }}
 
