@@ -15,12 +15,21 @@ import sys
 from pathlib import Path
 from typing import Protocol
 
+from qlizmet.app.paths import is_frozen
+
 APP_ID = "qlizmet"
 APP_NAME = "qlizmet"
 
 
 def launch_command() -> str:
-    """Команда, которой система должна запускать приложение."""
+    """Команда, которой система должна запускать приложение.
+
+    В собранном приложении ``sys.executable`` — это сам qlizmet, и добавлять
+    ``-m qlizmet`` нельзя: получилась бы ссылка на несуществующий модуль.
+    Из исходников же нужен интерпретатор с модулем.
+    """
+    if is_frozen():
+        return shlex.quote(sys.executable)
     return f"{shlex.quote(sys.executable)} -m qlizmet"
 
 
