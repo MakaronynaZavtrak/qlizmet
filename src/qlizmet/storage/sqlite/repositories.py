@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import sqlite3
 from collections.abc import Sequence
+from datetime import datetime
 
 from qlizmet.core.models import Card, CardProgress, Deck, ReviewRecord
 from qlizmet.core.stats import MATURE_INTERVAL_DAYS
@@ -277,3 +278,56 @@ class SqliteProgressRepository:
             ids,
         ).fetchone()
         return (row["total"], row["correct"])
+
+    # --- планирование занятий ---
+    #
+    # Даты хранятся строками ISO 8601 в UTC, поэтому сравнивать их можно прямо
+    # в SQL: у одинаково отформатированных дат лексикографический порядок
+    # совпадает с хронологическим.
+
+    def due_card_ids(self, deck_id: str, now: datetime) -> list[str]:
+        """Карточки набора, которым пора на повтор, начиная с самых просроченных."""
+        rows = self.conn.execute(
+            """
+            SELECT c.id
+            FROM cards c
+            JOIN card_progress p ON p.card_id = c.id
+            WHERE c.deck_id = ?
+              AND (p.due_at IS NULL OR p.due_at <= ?)
+            ORDER BY p.due_at IS NOT NULL, p.due_at, c.position
+            """,
+            (deck_id, dt_to_iso(now)),
+        )
+        return [row["id"] for row in rows]
+
+    def new_card_ids(self, deck_id: str) -> list[str]:
+        """Карточки набора, которые ещё ни разу не показывали."""
+        rows = self.conn.execute(
+            """
+            SELECT c.id
+            FROM cards c
+            LEFT JOIN card_progress p ON p.card_id = c.id
+            WHERE c.deck_id = ? AND p.card_id IS NULL
+            ORDER BY c.position
+            """,
+            (deck_id,),
+        )
+        return [row["id"] for row in rows]
+
+    def pending_counts_by_deck(self, now: datetime) -> dict[str, tuple[int, int]]:
+        """Сколько в каждом наборе повторов и новых — одним запросом на весь список."""
+        rows = self.conn.execute(
+            """
+            SELECT
+                c.deck_id,
+                COALESCE(SUM(
+                    p.card_id IS NOT NULL AND (p.due_at IS NULL OR p.due_at <= ?)
+                ), 0) AS due_count,
+                COALESCE(SUM(p.card_id IS NULL), 0) AS new_count
+            FROM cards c
+            LEFT JOIN card_progress p ON p.card_id = c.id
+            GROUP BY c.deck_id
+            """,
+            (dt_to_iso(now),),
+        )
+        return {row["deck_id"]: (row["due_count"], row["new_count"]) for row in rows}

@@ -17,12 +17,14 @@ from PySide6.QtWidgets import (
 )
 
 from qlizmet.app.deck_service import DeckService
-from qlizmet.core.study import Direction, StudyMode, mode_availability
+from qlizmet.app.scheduler_service import SchedulerService
+from qlizmet.core.study import Direction, SessionScope, StudyMode, mode_availability
 from qlizmet.ui.widgets.screen_header import ScreenHeader
 from qlizmet.ui.theme import GAP, PAD
 from qlizmet.ui.widgets.mode_card import ModeCard
 
 NOT_READY_HINT = "появится в следующих версиях"
+NOTHING_TODAY_HINT = "на сегодня всё повторено"
 COLUMNS = 3
 
 #: Иконка на карточку режима. Соответствие живёт в интерфейсе — ядро про
@@ -48,15 +50,35 @@ class ModeSelectView(QWidget):
         decks: DeckService,
         implemented: set[StudyMode] | None = None,
         *,
+        scheduler: SchedulerService | None = None,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self._decks = decks
+        self._scheduler = scheduler
         self._implemented = implemented if implemented is not None else set(StudyMode)
         self._deck_id: str | None = None
+        self._direction = Direction.FRONT_TO_BACK
+        self._scope = SessionScope.ALL
+        self._cards_by_scope: dict[SessionScope, list] = {}
 
         self._header = ScreenHeader(back_text="К набору", title_name="deckTitle")
         self._header.back_requested.connect(self.back_requested.emit)
+
+        self._scope_buttons: dict[SessionScope, QPushButton] = {}
+        scope_row = QHBoxLayout()
+        scope_row.setSpacing(GAP)
+        for scope in SessionScope:
+            button = QPushButton(scope.title)
+            button.setObjectName(f"scope_{scope.value}")
+            button.setCheckable(True)
+            button.setChecked(scope is SessionScope.ALL)
+            button.clicked.connect(
+                lambda _checked=False, s=scope: self.set_scope(s)
+            )
+            self._scope_buttons[scope] = button
+            scope_row.addWidget(button)
+        scope_row.addStretch(1)
 
         grid = QGridLayout()
         grid.setSpacing(GAP)
@@ -75,6 +97,7 @@ class ModeSelectView(QWidget):
         layout.setContentsMargins(PAD, PAD, PAD, PAD)
         layout.setSpacing(GAP)
         layout.addWidget(self._header)
+        layout.addLayout(scope_row)
         layout.addStretch(1)
         layout.addLayout(grid)
         layout.addStretch(1)
@@ -86,14 +109,58 @@ class ModeSelectView(QWidget):
 
     def load(self, deck_id: str, direction: Direction = Direction.FRONT_TO_BACK) -> None:
         self._deck_id = deck_id
+        self._direction = direction
         deck = self._decks.get(deck_id)
         self._header.set_title(deck.title)
 
-        reasons = mode_availability(deck.cards, direction)
+        today = (
+            self._scheduler.cards_for_session(deck_id)
+            if self._scheduler is not None
+            else []
+        )
+        self._cards_by_scope = {
+            SessionScope.ALL: list(deck.cards),
+            SessionScope.DUE_TODAY: today,
+        }
+
+        self._scope_buttons[SessionScope.ALL].setText(
+            f"{SessionScope.ALL.title} ({len(deck.cards)})"
+        )
+        self._scope_buttons[SessionScope.DUE_TODAY].setText(
+            f"{SessionScope.DUE_TODAY.title} ({len(today)})"
+        )
+        self._scope_buttons[SessionScope.DUE_TODAY].setEnabled(
+            self._scheduler is not None
+        )
+        self._apply_scope()
+
+    @property
+    def scope(self) -> SessionScope:
+        return self._scope
+
+    def set_scope(self, scope: SessionScope) -> None:
+        """Переключить область занятия и пересчитать доступность режимов."""
+        self._scope = scope
+        for value, button in self._scope_buttons.items():
+            button.setChecked(value is scope)
+        self._apply_scope()
+
+    def scoped_cards(self) -> list:
+        """Карточки, с которыми пойдёт занятие при текущей области."""
+        return list(self._cards_by_scope.get(self._scope, []))
+
+    def _apply_scope(self) -> None:
+        cards = self._cards_by_scope.get(self._scope, [])
+        nothing_today = self._scope is SessionScope.DUE_TODAY and not cards
+
+        reasons = mode_availability(cards, self._direction)
         for mode, card in self._cards.items():
             reason = reasons[mode]
             if mode not in self._implemented:
                 card.set_available(False, NOT_READY_HINT)
+            elif nothing_today:
+                # общее «нужна хотя бы одна карточка» тут только запутало бы
+                card.set_available(False, NOTHING_TODAY_HINT)
             elif reason:
                 card.set_available(False, reason)
             else:

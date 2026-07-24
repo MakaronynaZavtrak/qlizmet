@@ -24,6 +24,7 @@ from qlizmet.core.study.learn import (
     QuestionType,
 )
 from qlizmet.core.study.modes import (
+    SessionScope,
     StudyMode,
     available_modes,
     mode_availability,
@@ -84,6 +85,7 @@ __all__ = [
     "GravityFeedback",
     "GravitySummary",
     "StudyMode",
+    "SessionScope",
     "available_modes",
     "mode_availability",
     "typed_answer_count",

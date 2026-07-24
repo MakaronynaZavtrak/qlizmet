@@ -22,11 +22,13 @@ from PySide6.QtWidgets import (
 )
 
 from qlizmet.app.library_service import LibraryService
+from qlizmet.app.scheduler_service import SchedulerService
 from qlizmet.ui.icons import set_icon
 from qlizmet.ui.widgets.screen_header import ScreenHeader
 from qlizmet.ui.theme import Theme
 from qlizmet.ui.theme import GAP, PAD
 from qlizmet.ui.widgets.list_delegate import (
+    BADGE_ROLE,
     PROGRESS_ROLE,
     SUBTITLE_ROLE,
     TwoLineDelegate,
@@ -41,9 +43,16 @@ class DeckListView(QWidget):
     deck_opened = Signal(str)
     theme_toggle_requested = Signal()
 
-    def __init__(self, library: LibraryService, parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        library: LibraryService,
+        *,
+        scheduler: SchedulerService | None = None,
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__(parent)
         self._library = library
+        self._scheduler = scheduler
 
         header = ScreenHeader("Мои наборы", back_text=None)
 
@@ -116,12 +125,18 @@ class DeckListView(QWidget):
         previous = self.selected_deck_id()
         self._list.clear()
         summaries = self._library.summaries()
+        pending = (
+            self._scheduler.pending_by_deck() if self._scheduler is not None else {}
+        )
         for summary in summaries:
             item = QListWidgetItem(summary.title)
             item.setData(DECK_ID_ROLE, summary.id)
             item.setData(SUBTITLE_ROLE, _deck_subtitle(summary))
             if summary.card_count:
                 item.setData(PROGRESS_ROLE, summary.mastery)
+            counts = pending.get(summary.id)
+            if counts is not None and not counts.is_empty:
+                item.setData(BADGE_ROLE, f"{counts.total} на сегодня")
             if summary.description:
                 item.setToolTip(summary.description)
             self._list.addItem(item)

@@ -14,6 +14,17 @@ from qlizmet.core.models import Card
 from qlizmet.core.study.base import Direction, answer_face
 
 
+class SessionScope(Enum):
+    """Какие карточки набора берём на занятие."""
+
+    ALL = "all"
+    DUE_TODAY = "due_today"
+
+    @property
+    def title(self) -> str:
+        return "Весь набор" if self is SessionScope.ALL else "На сегодня"
+
+
 class StudyMode(Enum):
     FLASHCARDS = "flashcards"
     LEARN = "learn"

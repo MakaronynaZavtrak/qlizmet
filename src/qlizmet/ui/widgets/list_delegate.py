@@ -23,6 +23,8 @@ from qlizmet.ui.theme import current_palette
 SUBTITLE_ROLE = Qt.ItemDataRole.UserRole + 100
 #: Роль с долей выполнения (0..1). Если задана — под строкой рисуется полоска.
 PROGRESS_ROLE = Qt.ItemDataRole.UserRole + 101
+#: Роль со значком справа: короткий текст акцентным цветом (например, «3 к повторению»).
+BADGE_ROLE = Qt.ItemDataRole.UserRole + 102
 
 PADDING_X = 12
 PADDING_Y = 9
@@ -59,6 +61,10 @@ class TwoLineDelegate(QStyledItemDelegate):
         painter.save()
 
         rect = option.rect.adjusted(PADDING_X, PADDING_Y, -PADDING_X, -PADDING_Y)
+
+        badge = index.data(BADGE_ROLE)
+        if badge:
+            rect = self._draw_badge(painter, rect, str(badge), palette, option)
         title_font = QFont(option.font)
         subtitle_font = QFont(option.font)
         subtitle_font.setPointSizeF(max(option.font.pointSizeF() - 1, 7.0))
@@ -94,6 +100,22 @@ class TwoLineDelegate(QStyledItemDelegate):
             self._draw_progress(painter, rect, float(progress), palette)
 
         painter.restore()
+
+    def _draw_badge(self, painter, rect, text, palette, option) -> QRect:
+        """Значок у правого края. Возвращает место, оставшееся под текст."""
+        painter.save()
+        painter.setFont(option.font)
+        metrics = painter.fontMetrics()
+        width = metrics.horizontalAdvance(text)
+
+        painter.setPen(QColor(palette.accent))
+        painter.drawText(
+            QRect(rect.right() - width, rect.top(), width, metrics.height()),
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
+            text,
+        )
+        painter.restore()
+        return rect.adjusted(0, 0, -(width + PADDING_X), 0)
 
     def _draw_progress(self, painter, rect, progress, palette) -> None:
         """Тонкая полоска выполнения по нижнему краю строки."""

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Protocol, runtime_checkable
 
 from qlizmet.core.models import CardProgress, Deck, ReviewRecord
@@ -59,3 +60,9 @@ class ProgressRepository(Protocol):
     def progress_for(self, card_ids: Sequence[str]) -> dict[str, CardProgress]: ...
 
     def review_totals(self, card_ids: Sequence[str]) -> tuple[int, int]: ...
+
+    def due_card_ids(self, deck_id: str, now: datetime) -> list[str]: ...
+
+    def new_card_ids(self, deck_id: str) -> list[str]: ...
+
+    def pending_counts_by_deck(self, now: datetime) -> dict[str, tuple[int, int]]: ...

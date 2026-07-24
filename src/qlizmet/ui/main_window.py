@@ -7,10 +7,11 @@ from PySide6.QtWidgets import QApplication, QMainWindow, QStackedWidget, QWidget
 
 from qlizmet.app.deck_service import DeckService
 from qlizmet.app.library_service import LibraryService
+from qlizmet.app.scheduler_service import SchedulerService
 from qlizmet.app.stats_service import StatsService
 from qlizmet.app.study_service import StudyService
 from qlizmet.app.settings import Settings, save_settings
-from qlizmet.core.study import Direction, StudyMode
+from qlizmet.core.study import Direction, SessionScope, StudyMode
 from qlizmet.ui.icons import refresh_icons
 from qlizmet.ui.theme import Theme, apply_roles, apply_theme
 from qlizmet.ui.views.deck_editor_view import DeckEditorView
@@ -48,6 +49,7 @@ class MainWindow(QMainWindow):
         decks: DeckService,
         study: StudyService | None = None,
         stats: StatsService | None = None,
+        scheduler: SchedulerService | None = None,
         *,
         media_root: Path | str | None = None,
         theme: Theme = Theme.DARK,
@@ -60,11 +62,12 @@ class MainWindow(QMainWindow):
 
         self._library = library
         self._decks = decks
+        self._scheduler = scheduler
         self._direction = Direction.FRONT_TO_BACK
 
         self._stack = QStackedWidget()
 
-        self._deck_list = DeckListView(library)
+        self._deck_list = DeckListView(library, scheduler=scheduler)
         self._deck_list.setObjectName(PAGE_DECK_LIST)
         self._deck_list.deck_opened.connect(self.open_deck)
         self._deck_list.theme_toggle_requested.connect(self.toggle_theme)
@@ -75,8 +78,9 @@ class MainWindow(QMainWindow):
         self._deck_editor.back_requested.connect(self.show_deck_list)
         self._deck_editor.study_requested.connect(self.show_modes)
         self._deck_editor.stats_requested.connect(self.show_stats)
+        self._deck_editor.review_requested.connect(self.show_review)
 
-        self._modes = ModeSelectView(decks, IMPLEMENTED_MODES)
+        self._modes = ModeSelectView(decks, IMPLEMENTED_MODES, scheduler=scheduler)
         self._modes.setObjectName(PAGE_MODES)
         self._modes.back_requested.connect(self._back_to_editor)
         self._modes.mode_selected.connect(self.start_mode)
@@ -212,6 +216,7 @@ class MainWindow(QMainWindow):
             self.show_deck_list()
             return
         self._deck_editor.load(deck_id)
+        self._refresh_pending(deck_id)
         self._stack.setCurrentWidget(self._deck_editor)
 
     def show_stats(self) -> None:
@@ -221,20 +226,30 @@ class MainWindow(QMainWindow):
         self._stats_view.load(deck_id)
         self._stack.setCurrentWidget(self._stats_view)
 
-    def show_modes(self) -> None:
+    def show_modes(self, scope: SessionScope = SessionScope.ALL) -> None:
         deck_id = self._deck_editor.deck_id
         if deck_id is None:
             self.show_deck_list()
             return
         self._modes.load(deck_id, self._direction)
+        self._modes.set_scope(scope)
         self._stack.setCurrentWidget(self._modes)
+
+    def show_review(self) -> None:
+        """Занятие по расписанию: тот же экран режимов, но сразу «на сегодня».
+
+        Не запускаем режим сами: на сегодня может выпасть одна карточка, и тогда
+        часть режимов недоступна — пусть человек выберет из доступных.
+        """
+        self.show_modes(SessionScope.DUE_TODAY)
 
     def start_mode(self, mode_value: str) -> None:
         deck_id = self._deck_editor.deck_id
         if deck_id is None:
             self.show_deck_list()
             return
-        cards = self._decks.get(deck_id).cards
+        # очередь берём с экрана режимов: она уже учитывает выбранную область
+        cards = self._modes.scoped_cards() or self._decks.get(deck_id).cards
         mode = StudyMode(mode_value)
 
         if mode is StudyMode.FLASHCARDS:
@@ -256,10 +271,18 @@ class MainWindow(QMainWindow):
             self._gravity.start(cards, direction=self._direction)
             self._stack.setCurrentWidget(self._gravity)
 
+    def _refresh_pending(self, deck_id: str) -> None:
+        """Обновить счётчик на кнопке повторения."""
+        if self._scheduler is None:
+            self._deck_editor.set_pending(0)
+            return
+        self._deck_editor.set_pending(self._scheduler.deck_plan(deck_id).total)
+
     def _back_to_editor(self) -> None:
         deck_id = self._deck_editor.deck_id
         if deck_id is None:
             self.show_deck_list()
             return
         self._deck_editor.refresh()
+        self._refresh_pending(deck_id)
         self._stack.setCurrentWidget(self._deck_editor)
