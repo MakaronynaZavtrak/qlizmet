@@ -43,6 +43,8 @@ class CardSurface(QFrame):
     """Карточка: рамка, скругление и переворот содержимого."""
 
     flip_finished = Signal()
+    #: Клик по карточке — чтобы по ней можно было переворачивать, как кнопкой.
+    clicked = Signal()
 
     def __init__(
         self,
@@ -54,6 +56,7 @@ class CardSurface(QFrame):
         super().__init__(parent)
         self.setObjectName("cardSurface")
         self.setFrameShape(QFrame.Shape.NoFrame)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)  # карточка кликабельна
         self.setMinimumSize(MIN_CARD_WIDTH, MIN_CARD_HEIGHT)
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
 
@@ -150,6 +153,11 @@ class CardSurface(QFrame):
         self._settle()
 
     # --- отрисовка кадра ---
+
+    def mousePressEvent(self, event) -> None:  # noqa: N802 - имя задаёт Qt
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.clicked.emit()
+        super().mousePressEvent(event)
 
     def paintEvent(self, event) -> None:  # noqa: N802 - имя задаёт Qt
         if not self._flipping or self._snapshot is None:

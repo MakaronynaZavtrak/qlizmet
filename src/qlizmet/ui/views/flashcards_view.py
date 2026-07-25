@@ -52,9 +52,10 @@ class FlashcardsView(QWidget):
 
         header.add_action(self._progress)
 
-        self._face = FaceView(media_root=media_root)
+        self._face = FaceView(media_root=media_root, selectable=False)
         self._face.setObjectName("cardFace")
         self._card = CardSurface(self._face, animated=animated)
+        self._card.clicked.connect(self.flip)
 
         flip_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Space), self)
         flip_shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)

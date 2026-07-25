@@ -32,12 +32,14 @@ class FaceView(QWidget):
         media_root: Path | str | None = None,
         max_image_width: int = DEFAULT_MAX_IMAGE_WIDTH,
         font_size: int = 14,
+        selectable: bool = True,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self._media_root = Path(media_root) if media_root is not None else None
         self._max_image_width = max_image_width
         self._font_size = font_size
+        self._selectable = selectable
 
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -93,7 +95,8 @@ class FaceView(QWidget):
         label.setObjectName("faceBlockText")
         label.setWordWrap(True)
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        if self._selectable:
+            label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
         return label
 
