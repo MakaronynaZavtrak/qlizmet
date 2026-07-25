@@ -33,8 +33,12 @@ TICK_MS = 100
 COLUMNS = 4
 DEFAULT_PAIRS = 6
 
+#: Сколько держится подсветка совпадения/промаха, прежде чем погаснуть.
+FLASH_MS = 320
+
 STATE_IDLE = ""
 STATE_SELECTED = "selected"
+STATE_MATCH = "match"
 STATE_WRONG = "wrong"
 
 
@@ -127,15 +131,27 @@ class MatchView(QWidget):
             return None
         feedback = self._game.select(tile_id)
 
-        if feedback.outcome is MatchOutcome.MISMATCH:
-            # подсветим обе плитки красным и погасим через мгновение
+        if feedback.outcome is MatchOutcome.MATCH:
+            if self.is_finished:
+                # последняя пара — сразу показываем итог, вспышка уже ни к чему
+                self._refresh()
+            else:
+                # зелёная вспышка на совпавшей паре, затем убираем её с поля
+                for matched_id in feedback.tiles:
+                    self._style(matched_id, STATE_MATCH)
+                    button = self._buttons.get(matched_id)
+                    if button is not None:
+                        button.setEnabled(False)  # плитка уже уходит, клики не нужны
+                self._update_clock()
+                QTimer.singleShot(FLASH_MS, self._settle_after_match)
+        elif feedback.outcome is MatchOutcome.MISMATCH:
+            # красная вспышка на обеих плитках, затем гасим
             for wrong_id in feedback.tiles:
                 self._style(wrong_id, STATE_WRONG)
-            QTimer.singleShot(400, self._clear_highlight)
-        elif feedback.outcome is MatchOutcome.MATCH:
-            self._rebuild_grid()
-
-        self._refresh()
+            self._update_clock()
+            QTimer.singleShot(FLASH_MS, self._clear_highlight)
+        else:
+            self._refresh()
         return feedback.outcome
 
     def summary_text(self) -> str:
@@ -178,6 +194,11 @@ class MatchView(QWidget):
         button = self._buttons.get(tile_id)
         if button is not None:
             set_state(button, state)
+
+    def _settle_after_match(self) -> None:
+        """Убрать совпавшую пару с поля после зелёной вспышки."""
+        self._rebuild_grid()
+        self._refresh()
 
     def _clear_highlight(self) -> None:
         selected = self.selected_tile()

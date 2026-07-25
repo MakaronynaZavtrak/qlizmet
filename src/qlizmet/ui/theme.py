@@ -266,7 +266,8 @@ QPushButton#modeCard:disabled #modeCardTitle {{ color: {p.text_muted}; }}
 *[state="bad"] {{ color: {p.danger}; }}
 
 QPushButton[state="selected"] {{ border: 2px solid {p.accent}; background: {p.selection}; }}
-QPushButton[state="wrong"] {{ border: 2px solid {p.danger}; }}
+QPushButton[state="match"] {{ border: 2px solid {p.success}; background: {p.success}; color: {p.on_accent}; }}
+QPushButton[state="wrong"] {{ border: 2px solid {p.danger}; background: {p.danger}; color: {p.on_accent}; }}
 """
 
 
