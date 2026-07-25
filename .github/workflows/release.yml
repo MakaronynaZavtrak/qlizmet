@@ -61,35 +61,31 @@ jobs:
           name: linux
           path: dist/*.AppImage
 
-  # macOS появится в следующем коммите: нужен блок BUNDLE в qlizmet.spec
-  # и packaging/macos/build_dmg.sh. После этого раскомментируй джобу и
-  # добавь macos в needs у release ниже.
-  #
-  # macos:
-  #   runs-on: macos-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: actions/setup-python@v5
-  #       with:
-  #         python-version: "3.12"
-  #     - name: Install project and PyInstaller
-  #       run: |
-  #         python -m pip install --upgrade pip
-  #         pip install .
-  #         pip install pyinstaller
-  #     - name: Build app (PyInstaller)
-  #       run: python packaging/build.py
-  #     - name: Build dmg
-  #       run: bash packaging/macos/build_dmg.sh
-  #     - uses: actions/upload-artifact@v4
-  #       with:
-  #         name: macos
-  #         path: dist/*.dmg
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install project and PyInstaller
+        run: |
+          python -m pip install --upgrade pip
+          pip install .
+          pip install pyinstaller
+      - name: Build app (PyInstaller)
+        run: python packaging/build.py
+      - name: Build dmg
+        run: bash packaging/macos/build_dmg.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: dist/*.dmg
 
   release:
     # Публикуем только когда запуск по тегу; ручной прогон просто собирает.
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [windows, linux]
+    needs: [windows, linux, macos]
     runs-on: ubuntu-latest
     permissions:
       contents: write            # право создать релиз и залить в него файлы
