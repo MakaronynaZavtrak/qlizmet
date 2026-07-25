@@ -11,6 +11,15 @@ import subprocess
 import sys
 from pathlib import Path
 
+# На системах с не-UTF-8 консолью (английская Windows, раннеры CI) вывод идёт
+# в cp1252/cp1251, и print с кириллицей падает с UnicodeEncodeError. Переводим
+# stdout/stderr в UTF-8 до первого сообщения.
+if sys.platform == "win32":
+    for _stream in (sys.stdout, sys.stderr):
+        _reconfigure = getattr(_stream, "reconfigure", None)
+        if _reconfigure is not None:
+            _reconfigure(encoding="utf-8")
+
 PROJECT = Path(__file__).resolve().parent.parent
 SPEC = PROJECT / "packaging" / "qlizmet.spec"
 VERSION_ISS = PROJECT / "packaging" / "windows" / "version.iss"
