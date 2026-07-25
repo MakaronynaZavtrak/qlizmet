@@ -13,6 +13,7 @@ def main() -> int:
     from PySide6.QtWidgets import QApplication
 
     from qlizmet.app import autostart as autostart_module
+    from qlizmet.app.autostart import should_start_hidden
     from qlizmet.app.deck_service import DeckService
     from qlizmet.app.library_service import LibraryService
     from qlizmet.app.scheduler_service import SchedulerService
@@ -83,7 +84,11 @@ def main() -> int:
         reminders.pending_changed.connect(tray.set_pending)
         reminders.start()
 
-    window.show()
+    # запуск системой при входе не должен открывать окно на весь экран
+    if should_start_hidden(sys.argv, tray_available=tray is not None):
+        window.update_tray_pending()
+    else:
+        window.show()
     try:
         return app.exec()
     finally:

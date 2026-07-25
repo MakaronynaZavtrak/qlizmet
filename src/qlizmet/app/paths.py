@@ -19,6 +19,15 @@ DATABASE_NAME = "qlizmet.db"
 MEDIA_DIR_NAME = "media"
 
 
+def is_frozen() -> bool:
+    """Запущены ли мы из собранного исполняемого файла, а не из исходников.
+
+    PyInstaller выставляет этот признак; от него зависит, чем именно система
+    должна запускать приложение при автозапуске.
+    """
+    return getattr(sys, "frozen", False)
+
+
 def app_data_dir() -> Path:
     """Папка с данными приложения (создаётся при необходимости)."""
     override = os.environ.get(ENV_HOME)

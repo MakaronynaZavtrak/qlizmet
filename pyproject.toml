@@ -17,6 +17,10 @@ dependencies = [
 dev = [
     "pytest>=8.0",
 ]
+# Только для сборки дистрибутива; самому приложению PyInstaller не нужен.
+build = [
+    "pyinstaller>=6.0",
+]
 
 [project.scripts]
 qlizmet = "qlizmet.__main__:main"

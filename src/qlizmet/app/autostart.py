@@ -15,13 +15,48 @@ import sys
 from pathlib import Path
 from typing import Protocol
 
+from qlizmet.app.paths import is_frozen
+
 APP_ID = "qlizmet"
 APP_NAME = "qlizmet"
 
+#: Признак запуска системой при входе. С ним приложение стартует сразу в трей,
+#: не открывая окно: иначе qlizmet лез бы на экран при каждом включении
+#: компьютера, и автозапуск отключили бы в первый же день.
+STARTUP_FLAG = "--startup"
+
+
+def quote_path(path: str) -> str:
+    r"""Закавычить путь по правилам текущей системы.
+
+    ``shlex.quote`` рассчитан на POSIX и заключает путь в одинарные кавычки —
+    Windows такую команду не выполнит, а пути вида ``C:\Program Files\...``
+    встречаются как раз там.
+    """
+    if sys.platform.startswith("win"):
+        return f'"{path}"' if " " in path else path
+    return shlex.quote(path)
+
+
+def should_start_hidden(argv: list[str], *, tray_available: bool) -> bool:
+    """Прятать ли окно при запуске.
+
+    Без трея прятать нельзя: приложение стало бы невидимым и недоступным.
+    """
+    return STARTUP_FLAG in argv and tray_available
+
 
 def launch_command() -> str:
-    """Команда, которой система должна запускать приложение."""
-    return f"{shlex.quote(sys.executable)} -m qlizmet"
+    """Команда, которой система должна запускать приложение.
+
+    В собранном приложении ``sys.executable`` — это сам qlizmet, и добавлять
+    ``-m qlizmet`` нельзя: получилась бы ссылка на несуществующий модуль.
+    Из исходников же нужен интерпретатор с модулем.
+    """
+    executable = quote_path(sys.executable)
+    if is_frozen():
+        return f"{executable} {STARTUP_FLAG}"
+    return f"{executable} -m qlizmet {STARTUP_FLAG}"
 
 
 class Autostart(Protocol):
