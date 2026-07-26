@@ -23,14 +23,31 @@ from PySide6.QtWidgets import (
 
 from qlizmet.app.deck_service import DeckService
 from qlizmet.core.markup import face_from_markup, face_preview
-from qlizmet.core.models import CardFace
+from qlizmet.core.models import CardFace, LatexBlock
 from qlizmet.ui.icons import set_icon
 from qlizmet.ui.widgets.screen_header import ScreenHeader
 from qlizmet.ui.theme import GAP, PAD
 from qlizmet.ui.views.card_editor_dialog import CardEditorDialog
-from qlizmet.ui.widgets.list_delegate import SUBTITLE_ROLE, TwoLineDelegate
+from qlizmet.ui.widgets.list_delegate import (
+    SUBTITLE_LATEX_ROLE,
+    SUBTITLE_ROLE,
+    TITLE_LATEX_ROLE,
+    TwoLineDelegate,
+)
 
 CARD_ID_ROLE = Qt.ItemDataRole.UserRole
+
+
+def _single_formula(face: CardFace) -> str | None:
+    """LaTeX грани, если она состоит ровно из одной формулы, иначе ``None``.
+
+    Только такую грань имеет смысл показывать в списке картинкой; смешанный
+    «текст + формула» остаётся текстовым превью.
+    """
+    blocks = face.blocks
+    if len(blocks) == 1 and isinstance(blocks[0], LatexBlock):
+        return blocks[0].latex
+    return None
 
 
 class DeckEditorView(QWidget):
@@ -162,6 +179,13 @@ class DeckEditorView(QWidget):
             item = QListWidgetItem(face_preview(card.front))
             item.setData(CARD_ID_ROLE, card.id)
             item.setData(SUBTITLE_ROLE, face_preview(card.back))
+            # карточку-формулу покажем в списке самой формулой, а не сырым LaTeX
+            front_latex = _single_formula(card.front)
+            if front_latex is not None:
+                item.setData(TITLE_LATEX_ROLE, front_latex)
+            back_latex = _single_formula(card.back)
+            if back_latex is not None:
+                item.setData(SUBTITLE_LATEX_ROLE, back_latex)
             self._list.addItem(item)
 
         has_cards = len(deck) > 0
