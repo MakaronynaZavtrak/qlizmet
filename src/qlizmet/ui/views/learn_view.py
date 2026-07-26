@@ -14,6 +14,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -32,11 +33,14 @@ from qlizmet.core.study import (
     LearnSession,
     QuestionType,
 )
+from qlizmet.ui.formula import formula_pixmap, single_formula
 from qlizmet.ui.widgets.screen_header import ScreenHeader
-from qlizmet.ui.theme import GAP, PAD, set_state
+from qlizmet.ui.theme import GAP, PAD, current_palette, set_state
 from qlizmet.ui.widgets.face_view import FaceView
 
 MAX_CHOICES = 4
+#: Максимальная высота формулы-иконки на кнопке варианта.
+CHOICE_FORMULA_HEIGHT = 28
 
 
 class LearnView(QWidget):
@@ -68,9 +72,13 @@ class LearnView(QWidget):
         self._prompt = FaceView(media_root=media_root)
         self._prompt.setObjectName("promptFace")
 
-        # варианты ответа: кнопки создаём заранее, лишние прячем
+        # варианты ответа: кнопки создаём заранее, лишние прячем.
+        # варианты стоят в строку (а не в столбик), поэтому раскладка — QHBoxLayout
         self._choice_buttons: list[QPushButton] = []
-        choices = QVBoxLayout()
+        #: Текстовые ярлыки вариантов (для логики и тестов), даже когда на кнопке
+        #: показана формула-картинка — там текст пустой.
+        self._choice_labels: list[str] = [""] * MAX_CHOICES
+        choices = QHBoxLayout()
         for index in range(MAX_CHOICES):
             button = QPushButton()
             button.setObjectName(f"choice_{index}")
@@ -192,10 +200,15 @@ class LearnView(QWidget):
         return self._summary.text()
 
     def choice_texts(self) -> list[str]:
-        """Подписи видимых вариантов (удобно для тестов)."""
+        """Подписи видимых вариантов (удобно для тестов).
+
+        Берём сохранённый ярлык, а не ``button.text()``: у варианта-формулы на
+        кнопке стоит иконка, а текст пустой — но осмысленная подпись всё равно
+        нужна логике и тестам.
+        """
         return [
-            button.text()
-            for button in self._choice_buttons
+            self._choice_labels[index]
+            for index, button in enumerate(self._choice_buttons)
             if button.isVisibleTo(self._choices_box)
         ]
 
@@ -268,9 +281,26 @@ class LearnView(QWidget):
             for index, button in enumerate(self._choice_buttons):
                 has_option = index < len(question.options)
                 button.setVisible(has_option)
-                if has_option:
-                    # face_preview, а не plain_text: у формул и картинок текст пустой,
-                    # и такие варианты были бы неотличимы друг от друга
-                    button.setText(face_preview(question.options[index]))
+                if not has_option:
+                    continue
+                option = question.options[index]
+                # face_preview, а не plain_text: у формул и картинок текст пустой,
+                # и такие варианты были бы неотличимы друг от друга
+                label = face_preview(option)
+                self._choice_labels[index] = label
+                latex = single_formula(option)
+                pixmap = (
+                    formula_pixmap(latex, current_palette().text, CHOICE_FORMULA_HEIGHT)
+                    if latex is not None
+                    else None
+                )
+                if pixmap is not None:
+                    # вариант-формулу показываем самой формулой, а не сырым LaTeX
+                    button.setText("")
+                    button.setIcon(QIcon(pixmap))
+                    button.setIconSize(pixmap.size())
+                else:
+                    button.setIcon(QIcon())
+                    button.setText(label)
         else:
             self._answer_edit.setFocus()

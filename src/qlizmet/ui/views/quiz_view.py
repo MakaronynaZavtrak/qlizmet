@@ -13,6 +13,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -32,12 +33,15 @@ from qlizmet.core.study import (
     TestResult,
     TestSession,
 )
+from qlizmet.ui.formula import formula_pixmap, single_formula
 from qlizmet.ui.widgets.screen_header import ScreenHeader
-from qlizmet.ui.theme import GAP, PAD
+from qlizmet.ui.theme import GAP, PAD, current_palette
 from qlizmet.ui.widgets.face_view import FaceView
 
 MAX_CHOICES = 4
 DEFAULT_LENGTH = 20
+#: Максимальная высота формулы-иконки на кнопке варианта.
+CHOICE_FORMULA_HEIGHT = 28
 
 
 class TestView(QWidget):
@@ -76,9 +80,12 @@ class TestView(QWidget):
         self._prompt = FaceView(media_root=media_root)
         self._prompt.setObjectName("promptFace")
 
-        # выбор варианта
+        # выбор варианта: кнопки в строку, лишние прячем
         self._choice_buttons: list[QPushButton] = []
-        choices = QVBoxLayout()
+        #: Текстовые ярлыки вариантов (для логики и тестов): у варианта-формулы
+        #: на кнопке иконка, а текст пустой.
+        self._choice_labels: list[str] = [""] * MAX_CHOICES
+        choices = QHBoxLayout()
         for index in range(MAX_CHOICES):
             button = QPushButton()
             button.setObjectName(f"choice_{index}")
@@ -200,8 +207,8 @@ class TestView(QWidget):
 
     def choice_texts(self) -> list[str]:
         return [
-            button.text()
-            for button in self._choice_buttons
+            self._choice_labels[index]
+            for index, button in enumerate(self._choice_buttons)
             if button.isVisibleTo(self._choices_box)
         ]
 
@@ -284,8 +291,25 @@ class TestView(QWidget):
             for index, button in enumerate(self._choice_buttons):
                 has_option = index < len(question.options)
                 button.setVisible(has_option)
-                if has_option:
-                    button.setText(face_preview(question.options[index]))
+                if not has_option:
+                    continue
+                option = question.options[index]
+                label = face_preview(option)
+                self._choice_labels[index] = label
+                latex = single_formula(option)
+                pixmap = (
+                    formula_pixmap(latex, current_palette().text, CHOICE_FORMULA_HEIGHT)
+                    if latex is not None
+                    else None
+                )
+                if pixmap is not None:
+                    # вариант-формулу показываем самой формулой, а не сырым LaTeX
+                    button.setText("")
+                    button.setIcon(QIcon(pixmap))
+                    button.setIconSize(pixmap.size())
+                else:
+                    button.setIcon(QIcon())
+                    button.setText(label)
         elif question.type is TestQuestionType.TRUE_FALSE:
             self._kind_label.setText("Верно ли утверждение?")
             self._statement.setVisible(True)
