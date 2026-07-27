@@ -44,10 +44,14 @@ Anki), локальное хранение на одного пользоват�
 ## Установка и запуск
 
 ```bash
-python -m venv .venv
-# Windows: .\.venv\Scripts\Activate.ps1
-# Linux/macOS: source .venv/bin/activate
+# создаём окружение системным питоном (Linux/macOS: если нет команды python)
+python -m venv .venv        # Linux/macOS: python3 -m venv .venv
 
+# активируем окружение:
+#   Windows:      .\.venv\Scripts\Activate.ps1
+#   Linux/macOS:  source .venv/bin/activate
+
+# дальше python и pip — уже из окружения, одинаково на всех системах
 pip install -e ".[dev]"
 python -m qlizmet
 ```
