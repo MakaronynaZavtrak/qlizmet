@@ -164,6 +164,17 @@ def test_match_grid_has_scroll(qt_host) -> None:
     assert view.findChild(QScrollArea, "matchScroll") is not None
 
 
+def test_match_rotates_across_rounds(qt_host) -> None:
+    """Следующий заход показывает другие карточки, а не те же самые."""
+    deck = [_card(f"вопрос {i}", f"ответ {i}") for i in range(8)]
+    view = MatchView(parent=qt_host)
+    view.start(deck, autostart=False)
+    first = {tid.split(":")[0] for tid in view.tile_ids()}
+    view.start(deck, autostart=False)
+    second = {tid.split(":")[0] for tid in view.tile_ids()}
+    assert first != second  # ротация выдала новую пачку
+
+
 # --- «Гравитация» ---
 
 

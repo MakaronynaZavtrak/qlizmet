@@ -29,7 +29,7 @@ from PySide6.QtWidgets import (
 
 from qlizmet.core.markup import face_preview
 from qlizmet.core.models import Card
-from qlizmet.core.study import MatchGame, MatchOutcome
+from qlizmet.core.study import MatchGame, MatchOutcome, MatchRotation
 from qlizmet.ui.formula import formula_pixmap, single_formula
 from qlizmet.ui.widgets.choice_button import ChoiceButton
 from qlizmet.ui.widgets.screen_header import ScreenHeader
@@ -64,6 +64,8 @@ class MatchView(QWidget):
         super().__init__(parent)
         self._media_root = media_root
         self._game: MatchGame | None = None
+        self._rotation: MatchRotation | None = None
+        self._rotation_deck: tuple[str, ...] = ()
         self._elapsed_ms = 0
         self._buttons: dict[str, ChoiceButton] = {}
 
@@ -115,7 +117,16 @@ class MatchView(QWidget):
         pairs: int = DEFAULT_PAIRS,
         autostart: bool = True,
     ) -> None:
-        self._game = MatchGame(cards, pairs=pairs)
+        # ротация помнит, какие карточки уже были: при каждом заходе — новая
+        # пачка, с проходом по всему набору. Смена набора сбрасывает ротацию.
+        deck = list(cards)
+        deck_ids = tuple(card.id for card in deck)
+        if self._rotation is None or self._rotation_deck != deck_ids:
+            self._rotation = MatchRotation(deck)
+            self._rotation_deck = deck_ids
+
+        batch = self._rotation.next_batch(pairs)
+        self._game = MatchGame(batch)
         self._elapsed_ms = 0
         self._rebuild_grid()
         self._refresh()
