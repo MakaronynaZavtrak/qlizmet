@@ -124,14 +124,22 @@ def test_quiet_hours_are_configurable() -> None:
     early = datetime(2026, 1, 10, 7, 0)
     assert not decide(PendingCounts(due=3), now=early).should_notify
 
-    owl = ReminderPolicy(quiet_before=6, quiet_after=23)
+    owl = ReminderPolicy(quiet_before=6 * 60, quiet_after=23 * 60)
     assert decide(PendingCounts(due=3), now=early, policy=owl).should_notify
 
 
 def test_boundaries_of_quiet_hours() -> None:
-    policy = ReminderPolicy(quiet_before=9, quiet_after=22)
+    policy = ReminderPolicy(quiet_before=9 * 60, quiet_after=22 * 60)
     assert not policy.is_quiet_hour(datetime(2026, 1, 10, 9, 0))   # ровно 9:00 — можно
     assert policy.is_quiet_hour(datetime(2026, 1, 10, 22, 0))      # ровно 22:00 — уже нет
+
+
+def test_quiet_window_is_minute_precise() -> None:
+    policy = ReminderPolicy(quiet_before=9 * 60 + 30, quiet_after=21 * 60 + 45)
+    assert policy.is_quiet_hour(datetime(2026, 1, 10, 9, 29))      # до 9:30 — тихо
+    assert not policy.is_quiet_hour(datetime(2026, 1, 10, 9, 30))  # с 9:30 — можно
+    assert not policy.is_quiet_hour(datetime(2026, 1, 10, 21, 44)) # до 21:45 — можно
+    assert policy.is_quiet_hour(datetime(2026, 1, 10, 21, 45))     # с 21:45 — тихо
 
 
 def test_disabled_wins_over_everything() -> None:

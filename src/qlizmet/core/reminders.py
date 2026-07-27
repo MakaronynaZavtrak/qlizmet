@@ -19,8 +19,8 @@ from qlizmet.core.plurals import new_cards as new_word
 from qlizmet.core.srs import PendingCounts
 
 #: По умолчанию не тревожим до утра и после позднего вечера.
-DEFAULT_QUIET_BEFORE = 9
-DEFAULT_QUIET_AFTER = 22
+DEFAULT_QUIET_BEFORE = 9 * 60
+DEFAULT_QUIET_AFTER = 22 * 60
 
 TITLE = "qlizmet"
 
@@ -34,7 +34,8 @@ class ReminderPolicy:
     quiet_after: int = DEFAULT_QUIET_AFTER
 
     def is_quiet_hour(self, moment: datetime) -> bool:
-        return not (self.quiet_before <= moment.hour < self.quiet_after)
+        minute_of_day = moment.hour * 60 + moment.minute
+        return not (self.quiet_before <= minute_of_day < self.quiet_after)
 
 
 @dataclass(frozen=True, slots=True)
