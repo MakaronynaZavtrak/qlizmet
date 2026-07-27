@@ -142,6 +142,23 @@ def test_quiet_window_is_minute_precise() -> None:
     assert policy.is_quiet_hour(datetime(2026, 1, 10, 21, 45))     # с 21:45 — тихо
 
 
+def test_window_wraps_over_midnight() -> None:
+    """С 16:01 до 16:00 — активно почти круглые сутки, тихо только [16:00, 16:01)."""
+    policy = ReminderPolicy(quiet_before=16 * 60 + 1, quiet_after=16 * 60)
+    assert not policy.is_quiet_hour(datetime(2026, 1, 10, 16, 1))   # начало окна
+    assert not policy.is_quiet_hour(datetime(2026, 1, 10, 23, 0))   # вечер — активно
+    assert not policy.is_quiet_hour(datetime(2026, 1, 10, 3, 0))    # ночь — активно
+    assert not policy.is_quiet_hour(datetime(2026, 1, 10, 15, 59))  # до тихой минуты
+    assert policy.is_quiet_hour(datetime(2026, 1, 10, 16, 0))       # ровно 16:00 — тихо
+
+
+def test_same_start_and_end_is_all_day() -> None:
+    policy = ReminderPolicy(quiet_before=16 * 60, quiet_after=16 * 60)
+    assert not policy.is_quiet_hour(datetime(2026, 1, 10, 16, 0))
+    assert not policy.is_quiet_hour(datetime(2026, 1, 10, 3, 0))
+    assert not policy.is_quiet_hour(datetime(2026, 1, 10, 23, 59))
+
+
 def test_disabled_wins_over_everything() -> None:
     """Выключенные напоминания молчат, даже когда работы много."""
     decision = decide(

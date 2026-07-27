@@ -35,7 +35,16 @@ class ReminderPolicy:
 
     def is_quiet_hour(self, moment: datetime) -> bool:
         minute_of_day = moment.hour * 60 + moment.minute
-        return not (self.quiet_before <= minute_of_day < self.quiet_after)
+        start, end = self.quiet_before, self.quiet_after
+        if start == end:
+            active = True  # «с X до X» — круглые сутки (максимум 24 часа)
+        elif start < end:
+            active = start <= minute_of_day < end
+        else:
+            # окно переходит через полночь: активно от start до конца суток и
+            # от начала суток до end (например, с 16:01 до 16:00 — 23 ч 59 мин)
+            active = minute_of_day >= start or minute_of_day < end
+        return not active
 
 
 @dataclass(frozen=True, slots=True)
