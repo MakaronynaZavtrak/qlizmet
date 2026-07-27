@@ -191,6 +191,38 @@ QLineEdit, QPlainTextEdit {{
 }}
 QLineEdit:focus, QPlainTextEdit:focus {{ border-color: {p.accent}; }}
 
+QAbstractSpinBox {{
+    background: {p.surface};
+    color: {p.text};
+    border: 1px solid {p.border};
+    border-radius: {RADIUS}px;
+    padding: 6px 8px;
+    selection-background-color: {p.accent};
+    selection-color: {p.on_accent};
+}}
+QAbstractSpinBox:focus {{ border-color: {p.accent}; }}
+QAbstractSpinBox:disabled {{ color: {p.text_muted}; }}
+QAbstractSpinBox::up-button, QAbstractSpinBox::down-button {{
+    background: {p.surface_alt};
+    border: none;
+    width: 16px;
+}}
+QAbstractSpinBox::up-button:hover, QAbstractSpinBox::down-button:hover {{
+    background: {p.accent};
+}}
+QAbstractSpinBox::up-arrow {{
+    width: 0; height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-bottom: 5px solid {p.text};
+}}
+QAbstractSpinBox::down-arrow {{
+    width: 0; height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid {p.text};
+}}
+
 QGroupBox {{
     border: 1px solid {p.border};
     border-radius: {RADIUS}px;
