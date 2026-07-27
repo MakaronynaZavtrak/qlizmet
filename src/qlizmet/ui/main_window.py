@@ -4,6 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from PySide6.QtCore import Signal
+from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import QApplication, QMainWindow, QStackedWidget, QWidget
 
 from qlizmet.app.deck_service import DeckService
@@ -76,6 +77,12 @@ class MainWindow(QMainWindow):
         self._minimize_to_tray = minimize_to_tray
         self._tray_notice_pending = True
         self._direction = Direction.FRONT_TO_BACK
+
+        # Cmd+W на macOS (Ctrl+W на Windows/Linux) — закрыть окно так же, как
+        # красная кнопка: через closeEvent, с учётом сворачивания в трей.
+        # StandardKey.Close сам подбирает сочетание под платформу.
+        close_shortcut = QShortcut(QKeySequence.StandardKey.Close, self)
+        close_shortcut.activated.connect(self.close)
 
         self._stack = QStackedWidget()
 
