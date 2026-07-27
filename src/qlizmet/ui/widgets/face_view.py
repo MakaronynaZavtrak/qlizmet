@@ -32,17 +32,22 @@ class FaceView(QWidget):
         media_root: Path | str | None = None,
         max_image_width: int = DEFAULT_MAX_IMAGE_WIDTH,
         font_size: int = 14,
+        selectable: bool = True,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self._media_root = Path(media_root) if media_root is not None else None
         self._max_image_width = max_image_width
         self._font_size = font_size
+        self._selectable = selectable
 
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(8)
-        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # AlignVCenter, а не AlignCenter: блоки центрируются по вертикали, но
+        # тянутся на всю ширину — иначе текст-метка получала бы узкую ширину по
+        # своему sizeHint и длинная строка обрезалась бы вместо переноса
+        layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         # layout намеренно не сохраняется в атрибут: ссылка на него из виджета
         # вместе с обратной ссылкой родителя образует цикл, на котором сборщик
         # мусора Python и PySide6 могут освободить объект дважды
@@ -93,8 +98,13 @@ class FaceView(QWidget):
         label.setObjectName("faceBlockText")
         label.setWordWrap(True)
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
+        if self._selectable:
+            label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        # метка занимает всю ширину и растёт в высоту под перенесённый текст:
+        # Preferred по ширине с растяжением + учёт heightForWidth
+        policy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
+        policy.setHeightForWidth(True)
+        label.setSizePolicy(policy)
         return label
 
     def _latex_widget(self, block: LatexBlock) -> QLabel:

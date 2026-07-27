@@ -11,14 +11,19 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from PySide6.QtCore import Qt
+
 from PySide6.QtWidgets import (
+    QApplication,
     QDialog,
     QDialogButtonBox,
     QFormLayout,
+    QFrame,
     QGroupBox,
     QLabel,
     QLineEdit,
     QPlainTextEdit,
+    QScrollArea,
     QVBoxLayout,
     QWidget,
 )
@@ -77,13 +82,37 @@ class CardEditorDialog(QDialog):
         form = QFormLayout()
         form.addRow("Теги:", self._tags_edit)
 
+        # содержимое прокручивается: при длинном тексте превью растут в высоту,
+        # окно не должно уезжать за экран, а кнопки ОК/Cancel — всегда под рукой
+        content = QWidget()
+        content_layout = QVBoxLayout(content)
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.addWidget(hint)
+        content_layout.addWidget(
+            self._side_box("Лицевая сторона", self._front_edit, self._front_preview)
+        )
+        content_layout.addWidget(
+            self._side_box("Обратная сторона", self._back_edit, self._back_preview)
+        )
+        content_layout.addLayout(form)
+
+        scroll = QScrollArea()
+        scroll.setObjectName("cardEditorScroll")
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setWidget(content)
+
         layout = QVBoxLayout()
-        layout.addWidget(hint)
-        layout.addWidget(self._side_box("Лицевая сторона", self._front_edit, self._front_preview))
-        layout.addWidget(self._side_box("Обратная сторона", self._back_edit, self._back_preview))
-        layout.addLayout(form)
-        layout.addWidget(buttons)
+        layout.addWidget(scroll, stretch=1)
+        layout.addWidget(buttons)  # ОК/Cancel зафиксированы снизу, вне прокрутки
         self.setLayout(layout)
+
+        # стартовый размер и потолок по высоте экрана — дальше растит прокрутка
+        self.resize(1000, 760)
+        screen = QApplication.primaryScreen()
+        if screen is not None:
+            self.setMaximumHeight(screen.availableGeometry().height())
 
         if card is not None:
             self.set_card(card)

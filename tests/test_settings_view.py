@@ -10,6 +10,8 @@ import pytest
 pytest.importorskip("PySide6")
 pytest.importorskip("matplotlib")
 
+from PySide6.QtCore import QTime  # noqa: E402
+
 from qlizmet.app.autostart import (  # noqa: E402
     DesktopEntryAutostart,
     LaunchAgentAutostart,
@@ -116,12 +118,14 @@ def _view(qt_host, *, autostart=None, tray_available=True) -> SettingsView:
 
 
 def test_shows_saved_settings(home, qt_host) -> None:
-    save_settings(Settings(reminders_enabled=False, quiet_before=7, quiet_after=23))
+    save_settings(
+        Settings(reminders_enabled=False, quiet_before=7 * 60, quiet_after=23 * 60)
+    )
     view = _view(qt_host)
 
     assert not view.findChild(object, "remindersCheck").isChecked()
-    assert view.findChild(object, "quietBefore").value() == 7
-    assert view.findChild(object, "quietAfter").value() == 23
+    assert view.findChild(object, "quietBefore").time() == QTime(7, 0)
+    assert view.findChild(object, "quietAfter").time() == QTime(23, 0)
 
 
 def test_toggle_is_saved_immediately(home, qt_host) -> None:
@@ -134,9 +138,9 @@ def test_toggle_is_saved_immediately(home, qt_host) -> None:
 
 def test_quiet_hours_are_saved(home, qt_host) -> None:
     view = _view(qt_host)
-    view.findChild(object, "quietBefore").setValue(6)
+    view.findChild(object, "quietBefore").setTime(QTime(6, 30))  # с минутами
 
-    assert load_settings().quiet_before == 6
+    assert load_settings().quiet_before == 6 * 60 + 30
 
 
 def test_loading_does_not_resave(home, qt_host) -> None:

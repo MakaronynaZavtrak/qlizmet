@@ -20,7 +20,7 @@ from qlizmet.core.srs import PendingCounts
 from qlizmet.ui.icons import icon
 from qlizmet.ui.theme import current_palette
 
-TRAY_ICON = "cards"
+TRAY_ICON = "bulb"
 TRAY_ICON_SIZE = 32
 
 HIDDEN_TITLE = "qlizmet свернулся в трей"

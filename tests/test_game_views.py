@@ -123,18 +123,56 @@ def test_match_pairs_limit(qt_host) -> None:
     assert len(view.tile_ids()) == 4
 
 
-def test_match_tiles_show_formula_marks(qt_host) -> None:
-    """Плитка с формулой не должна оказаться пустой кнопкой."""
+def test_match_tiles_show_formula_as_image(qt_host) -> None:
+    """Плитка-формула показывается картинкой, текстовая — непустым текстом."""
     cards = [
         Card.create(CardFace.from_text("производная sin x"), CardFace((LatexBlock(r"\cos x"),))),
         _card("Италия", "Рим"),
     ]
     view = MatchView(parent=qt_host)
     view.start(cards, autostart=False)
-    texts = [
-        view.findChild(object, f"tile_{i}").text() for i in range(len(view.tile_ids()))
+    tiles = [
+        view.findChild(object, f"tile_{i}") for i in range(len(view.tile_ids()))
     ]
-    assert all(text.strip() for text in texts)
+    assert any(tile.is_formula() for tile in tiles)  # хотя бы одна — формула-картинка
+    for tile in tiles:
+        assert tile.is_formula() or tile.displayed_text().strip()  # плитка не пустая
+
+
+def test_match_tile_keeps_full_text(qt_host) -> None:
+    """Текст плитки не обрезается."""
+    long_back = "очень длинный текст ответа, который не должен обрезаться на плитке"
+    cards = [
+        Card.create(CardFace.from_text("вопрос"), CardFace.from_text(long_back)),
+        _card("Италия", "Рим"),
+    ]
+    view = MatchView(parent=qt_host)
+    view.start(cards, autostart=False)
+    texts = [
+        view.findChild(object, f"tile_{i}").displayed_text()
+        for i in range(len(view.tile_ids()))
+    ]
+    assert long_back in texts  # полный текст, без «…»
+    assert not any("…" in text for text in texts)
+
+
+def test_match_grid_has_scroll(qt_host) -> None:
+    from PySide6.QtWidgets import QScrollArea
+
+    view = MatchView(parent=qt_host)
+    view.start(CARDS, autostart=False)
+    assert view.findChild(QScrollArea, "matchScroll") is not None
+
+
+def test_match_rotates_across_rounds(qt_host) -> None:
+    """Следующий заход показывает другие карточки, а не те же самые."""
+    deck = [_card(f"вопрос {i}", f"ответ {i}") for i in range(8)]
+    view = MatchView(parent=qt_host)
+    view.start(deck, autostart=False)
+    first = {tid.split(":")[0] for tid in view.tile_ids()}
+    view.start(deck, autostart=False)
+    second = {tid.split(":")[0] for tid in view.tile_ids()}
+    assert first != second  # ротация выдала новую пачку
 
 
 # --- «Гравитация» ---

@@ -61,15 +61,15 @@ def test_flip_produces_many_intermediate_frames(qt_host) -> None:
     surface.flip(lambda: None)
     animation = surface.animation
 
-    widths = []
+    scales = []
     for step in range(0, 11):
         animation.setCurrentTime(int(FLIP_MS * step / 10))
-        widths.append(surface.maximumWidth())
+        scales.append(round(abs(1.0 - 2.0 * surface.flipProgress), 3))
 
     # промежуточных значений должно быть много, а не два
-    assert len(set(widths)) >= 6
-    # и карточка должна сначала сжаться почти в ноль
-    assert min(widths) < 10
+    assert len(set(scales)) >= 6
+    # и в середине карточка должна сжаться почти «в ребро»
+    assert min(scales) < 0.05
 
 
 def test_flip_narrows_then_widens(qt_host) -> None:
@@ -77,12 +77,15 @@ def test_flip_narrows_then_widens(qt_host) -> None:
     surface.flip(lambda: None)
     animation = surface.animation
 
+    def scale() -> float:
+        return abs(1.0 - 2.0 * surface.flipProgress)
+
     animation.setCurrentTime(FLIP_MS // 4)
-    quarter = surface.maximumWidth()
+    quarter = scale()
     animation.setCurrentTime(FLIP_MS // 2)
-    middle = surface.maximumWidth()
+    middle = scale()
     animation.setCurrentTime(FLIP_MS * 3 // 4)
-    three_quarters = surface.maximumWidth()
+    three_quarters = scale()
 
     assert middle < quarter
     assert middle < three_quarters

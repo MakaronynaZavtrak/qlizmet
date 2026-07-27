@@ -14,10 +14,12 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
+    QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
+    QScrollArea,
     QVBoxLayout,
     QWidget,
 )
@@ -26,18 +28,22 @@ from qlizmet.app.study_service import StudyService
 from qlizmet.core.markup import face_preview
 from qlizmet.core.models import Card
 from qlizmet.core.srs import Grade
+from qlizmet.ui.widgets.choice_button import ChoiceButton
 from qlizmet.core.study import (
     Direction,
     TestQuestionType,
     TestResult,
     TestSession,
 )
+from qlizmet.ui.formula import formula_pixmap, single_formula
 from qlizmet.ui.widgets.screen_header import ScreenHeader
-from qlizmet.ui.theme import GAP, PAD
+from qlizmet.ui.theme import GAP, PAD, current_palette
 from qlizmet.ui.widgets.face_view import FaceView
 
 MAX_CHOICES = 4
 DEFAULT_LENGTH = 20
+#: Максимальная высота формулы-иконки на кнопке варианта.
+CHOICE_FORMULA_HEIGHT = 28
 
 
 class TestView(QWidget):
@@ -76,16 +82,19 @@ class TestView(QWidget):
         self._prompt = FaceView(media_root=media_root)
         self._prompt.setObjectName("promptFace")
 
-        # выбор варианта
-        self._choice_buttons: list[QPushButton] = []
-        choices = QVBoxLayout()
+        # выбор варианта: кнопки в строку равными по ширине колонками, текст на
+        # кнопке переносится и растит её в высоту
+        self._choice_buttons: list[ChoiceButton] = []
+        #: Текстовые ярлыки вариантов (для логики и тестов): у варианта-формулы
+        #: на кнопке картинка, а текст пустой.
+        self._choice_labels: list[str] = [""] * MAX_CHOICES
+        choices = QHBoxLayout()
         for index in range(MAX_CHOICES):
-            button = QPushButton()
+            button = ChoiceButton()
             button.setObjectName(f"choice_{index}")
-            button.setMinimumHeight(40)
             button.clicked.connect(lambda _checked=False, i=index: self.answer_choice(i))
             self._choice_buttons.append(button)
-            choices.addWidget(button)
+            choices.addWidget(button, 1)
         self._choices_box = QWidget()
         self._choices_box.setObjectName("choicesBox")
         self._choices_box.setLayout(choices)
@@ -129,21 +138,37 @@ class TestView(QWidget):
         self._mistakes.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._mistakes.setWordWrap(True)
 
+        # центральная часть скроллится: длинный вопрос и переносящиеся варианты
+        # растут в высоту, а пользователь может прокрутить содержимое целиком
+        content = QWidget()
+        content.setObjectName("quizContent")
+        content_layout = QVBoxLayout(content)
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(GAP)
+        content_layout.addStretch(1)
+        content_layout.addWidget(self._kind_label)
+        content_layout.addWidget(self._prompt)
+        content_layout.addWidget(self._statement)
+        content_layout.addWidget(self._choices_box)
+        content_layout.addWidget(self._true_false_box)
+        content_layout.addWidget(self._answer_edit)
+        content_layout.addWidget(self._submit_button)
+        content_layout.addWidget(self._score)
+        content_layout.addWidget(self._mistakes)
+        content_layout.addStretch(1)
+
+        scroll = QScrollArea()
+        scroll.setObjectName("quizScroll")
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setWidget(content)
+
         layout = QVBoxLayout()
         layout.setContentsMargins(PAD, PAD, PAD, PAD)
         layout.setSpacing(GAP)
         layout.addWidget(header)
-        layout.addStretch(1)
-        layout.addWidget(self._kind_label)
-        layout.addWidget(self._prompt)
-        layout.addWidget(self._statement)
-        layout.addWidget(self._choices_box)
-        layout.addWidget(self._true_false_box)
-        layout.addWidget(self._answer_edit)
-        layout.addWidget(self._submit_button)
-        layout.addWidget(self._score)
-        layout.addWidget(self._mistakes)
-        layout.addStretch(1)
+        layout.addWidget(scroll, stretch=1)
         self.setLayout(layout)
 
     # --- управление сессией ---
@@ -200,8 +225,8 @@ class TestView(QWidget):
 
     def choice_texts(self) -> list[str]:
         return [
-            button.text()
-            for button in self._choice_buttons
+            self._choice_labels[index]
+            for index, button in enumerate(self._choice_buttons)
             if button.isVisibleTo(self._choices_box)
         ]
 
@@ -284,8 +309,25 @@ class TestView(QWidget):
             for index, button in enumerate(self._choice_buttons):
                 has_option = index < len(question.options)
                 button.setVisible(has_option)
-                if has_option:
-                    button.setText(face_preview(question.options[index]))
+                if not has_option:
+                    continue
+                option = question.options[index]
+                latex = single_formula(option)
+                pixmap = (
+                    formula_pixmap(latex, current_palette().text, CHOICE_FORMULA_HEIGHT)
+                    if latex is not None
+                    else None
+                )
+                if pixmap is not None:
+                    # вариант-формулу показываем самой формулой, а не сырым LaTeX;
+                    # ярлык [формула: ...] нужен логике/тестам (текст у формулы пуст)
+                    label = face_preview(option)
+                    button.set_formula(pixmap)
+                else:
+                    # полный текст без обрезки — на кнопке он переносится
+                    label = option.plain_text or face_preview(option)
+                    button.set_text(label)
+                self._choice_labels[index] = label
         elif question.type is TestQuestionType.TRUE_FALSE:
             self._kind_label.setText("Верно ли утверждение?")
             self._statement.setVisible(True)

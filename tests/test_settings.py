@@ -94,3 +94,30 @@ def test_with_reminder_sent_keeps_other_fields() -> None:
     updated = original.with_reminder_sent(date(2026, 1, 10))
     assert updated.theme == "light"
     assert updated.reminders_enabled is False
+
+
+def test_legacy_hours_migrate_to_minutes(tmp_path, monkeypatch) -> None:
+    """Старый файл (тихие часы в часах, без schema) переводится в минуты."""
+    import json
+
+    monkeypatch.setenv(ENV_HOME, str(tmp_path))
+    path = settings_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps({"quiet_before": 9, "quiet_after": 22}), encoding="utf-8"
+    )
+    settings = load_settings()
+    assert settings.quiet_before == 9 * 60
+    assert settings.quiet_after == 22 * 60
+
+
+def test_saved_minutes_do_not_migrate_again(tmp_path, monkeypatch) -> None:
+    """Сохранённые минуты (со schema) не умножаются на 60 при следующем чтении."""
+    monkeypatch.setenv(ENV_HOME, str(tmp_path))
+    save_settings(Settings(quiet_before=9 * 60 + 15, quiet_after=21 * 60 + 45))
+    reloaded = load_settings()
+    assert reloaded.quiet_before == 9 * 60 + 15
+    assert reloaded.quiet_after == 21 * 60 + 45
+
+    save_settings(reloaded)  # ещё один круг — по-прежнему минуты
+    assert load_settings().quiet_before == 9 * 60 + 15

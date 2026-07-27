@@ -12,12 +12,12 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, QTime, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QHBoxLayout,
     QLabel,
-    QSpinBox,
+    QTimeEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -26,6 +26,17 @@ from qlizmet.app.autostart import Autostart
 from qlizmet.app.settings import Settings, load_settings, save_settings
 from qlizmet.ui.theme import GAP, PAD
 from qlizmet.ui.widgets.screen_header import ScreenHeader
+
+
+def _minutes_to_qtime(minutes: int) -> QTime:
+    """Минуты от полуночи -> QTime (для показа в поле). 24:00 упираем в 23:59."""
+    minutes = max(0, min(minutes, 23 * 60 + 59))
+    return QTime(minutes // 60, minutes % 60)
+
+
+def _qtime_to_minutes(time: QTime) -> int:
+    """QTime -> минуты от полуночи."""
+    return time.hour() * 60 + time.minute()
 
 NO_TRAY_HINT = "В этой системе нет трея"
 NO_AUTOSTART_HINT = "Автозапуск для этой системы не поддерживается"
@@ -65,17 +76,15 @@ class SettingsView(QWidget):
         self._reminders_box.setObjectName("remindersCheck")
         self._reminders_box.toggled.connect(self._on_changed)
 
-        self._quiet_before = QSpinBox()
+        self._quiet_before = QTimeEdit()
         self._quiet_before.setObjectName("quietBefore")
-        self._quiet_before.setRange(0, 23)
-        self._quiet_before.setSuffix(":00")
-        self._quiet_before.valueChanged.connect(self._on_changed)
+        self._quiet_before.setDisplayFormat("HH:mm")
+        self._quiet_before.timeChanged.connect(self._on_changed)
 
-        self._quiet_after = QSpinBox()
+        self._quiet_after = QTimeEdit()
         self._quiet_after.setObjectName("quietAfter")
-        self._quiet_after.setRange(1, 24)
-        self._quiet_after.setSuffix(":00")
-        self._quiet_after.valueChanged.connect(self._on_changed)
+        self._quiet_after.setDisplayFormat("HH:mm")
+        self._quiet_after.timeChanged.connect(self._on_changed)
 
         quiet_row = QHBoxLayout()
         quiet_row.addWidget(QLabel("Напоминать с"))
@@ -115,8 +124,8 @@ class SettingsView(QWidget):
         try:
             self._tray_box.setChecked(settings.minimize_to_tray)
             self._reminders_box.setChecked(settings.reminders_enabled)
-            self._quiet_before.setValue(settings.quiet_before)
-            self._quiet_after.setValue(settings.quiet_after)
+            self._quiet_before.setTime(_minutes_to_qtime(settings.quiet_before))
+            self._quiet_after.setTime(_minutes_to_qtime(settings.quiet_after))
             self._autostart_box.setChecked(
                 self._autostart is not None and self._autostart.is_enabled()
             )
@@ -136,8 +145,8 @@ class SettingsView(QWidget):
             last_reminder_date=stored.last_reminder_date,
             minimize_to_tray=self._tray_box.isChecked(),
             tray_notice_shown=stored.tray_notice_shown,
-            quiet_before=self._quiet_before.value(),
-            quiet_after=self._quiet_after.value(),
+            quiet_before=_qtime_to_minutes(self._quiet_before.time()),
+            quiet_after=_qtime_to_minutes(self._quiet_after.time()),
         )
 
     def hint_text(self) -> str:
