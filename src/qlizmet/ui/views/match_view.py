@@ -4,6 +4,10 @@
 время. Логика сопоставления живёт в ``MatchGame`` из ядра, а здесь — сетка,
 секундомер и подсветка.
 
+Плитка показывает содержимое целиком: формулу — картинкой, текст — с переносом
+по словам, и растёт в высоту под длинный текст. Сетка обёрнута в прокрутку, так
+что при большом объёме плитки можно пролистать целиком.
+
 Секундомер устроен так, чтобы игру можно было тестировать: ``QTimer`` лишь
 вызывает публичный ``tick()``, а тесты дёргают его напрямую и шагают по времени
 вручную, ничего не дожидаясь.
@@ -15,10 +19,10 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtWidgets import (
+    QFrame,
     QGridLayout,
-    QHBoxLayout,
     QLabel,
-    QPushButton,
+    QScrollArea,
     QVBoxLayout,
     QWidget,
 )
@@ -26,8 +30,10 @@ from PySide6.QtWidgets import (
 from qlizmet.core.markup import face_preview
 from qlizmet.core.models import Card
 from qlizmet.core.study import MatchGame, MatchOutcome
+from qlizmet.ui.formula import formula_pixmap, single_formula
+from qlizmet.ui.widgets.choice_button import ChoiceButton
 from qlizmet.ui.widgets.screen_header import ScreenHeader
-from qlizmet.ui.theme import GAP, PAD, set_state
+from qlizmet.ui.theme import GAP, PAD, current_palette, set_state
 
 TICK_MS = 100
 COLUMNS = 4
@@ -35,6 +41,8 @@ DEFAULT_PAIRS = 6
 
 #: Сколько держится подсветка совпадения/промаха, прежде чем погаснуть.
 FLASH_MS = 320
+#: Максимальная высота формулы-картинки на плитке.
+TILE_FORMULA_HEIGHT = 40
 
 STATE_IDLE = ""
 STATE_SELECTED = "selected"
@@ -57,7 +65,7 @@ class MatchView(QWidget):
         self._media_root = media_root
         self._game: MatchGame | None = None
         self._elapsed_ms = 0
-        self._buttons: dict[str, QPushButton] = {}
+        self._buttons: dict[str, ChoiceButton] = {}
 
         self._timer = QTimer(self)
         self._timer.setInterval(TICK_MS)
@@ -76,15 +84,25 @@ class MatchView(QWidget):
         self._grid_host.setObjectName("tileGrid")
         self._grid_host.setLayout(QGridLayout())
 
+        # сетка прокручивается: длинные плитки растут в высоту, а всё поле можно
+        # пролистать вверх-вниз, если оно не влезает на экран
+        self._scroll = QScrollArea()
+        self._scroll.setObjectName("matchScroll")
+        self._scroll.setWidgetResizable(True)
+        self._scroll.setFrameShape(QFrame.Shape.NoFrame)
+        self._scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self._scroll.setWidget(self._grid_host)
+
         self._summary = QLabel()
         self._summary.setObjectName("summaryLabel")
         self._summary.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._summary.setWordWrap(True)
 
         layout = QVBoxLayout()
         layout.setContentsMargins(PAD, PAD, PAD, PAD)
         layout.setSpacing(GAP)
         layout.addWidget(header)
-        layout.addWidget(self._grid_host, stretch=1)
+        layout.addWidget(self._scroll, stretch=1)
         layout.addWidget(self._summary)
         self.setLayout(layout)
 
@@ -179,11 +197,27 @@ class MatchView(QWidget):
         if self._game is None:
             return
 
+        # колонки равной ширины
+        for column in range(COLUMNS):
+            grid.setColumnStretch(column, 1)
+
         for index, tile in enumerate(self._game.tiles):
-            button = QPushButton(face_preview(tile.face, 28))
+            button = ChoiceButton()
             button.setObjectName(f"tile_{index}")
             button.setMinimumHeight(72)
             button.setProperty("tileId", tile.id)
+            latex = single_formula(tile.face)
+            pixmap = (
+                formula_pixmap(latex, current_palette().text, TILE_FORMULA_HEIGHT)
+                if latex is not None
+                else None
+            )
+            if pixmap is not None:
+                # плитку-формулу показываем самой формулой, а не сырым LaTeX
+                button.set_formula(pixmap)
+            else:
+                # полный текст с переносом — плитка растёт в высоту
+                button.set_text(tile.face.plain_text or face_preview(tile.face))
             button.clicked.connect(
                 lambda _checked=False, tid=tile.id: self.select_tile(tid)
             )
@@ -210,7 +244,7 @@ class MatchView(QWidget):
 
     def _refresh(self) -> None:
         finished = self.is_finished
-        self._grid_host.setVisible(not finished)
+        self._scroll.setVisible(not finished)
         self._summary.setVisible(finished)
         self._update_clock()
         self._clear_highlight()
