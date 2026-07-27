@@ -14,12 +14,13 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
+    QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
+    QScrollArea,
     QVBoxLayout,
     QWidget,
 )
@@ -34,6 +35,7 @@ from qlizmet.core.study import (
     QuestionType,
 )
 from qlizmet.ui.formula import formula_pixmap, single_formula
+from qlizmet.ui.widgets.choice_button import ChoiceButton
 from qlizmet.ui.widgets.screen_header import ScreenHeader
 from qlizmet.ui.theme import GAP, PAD, current_palette, set_state
 from qlizmet.ui.widgets.face_view import FaceView
@@ -73,21 +75,21 @@ class LearnView(QWidget):
         self._prompt.setObjectName("promptFace")
 
         # варианты ответа: кнопки создаём заранее, лишние прячем.
-        # варианты стоят в строку (а не в столбик), поэтому раскладка — QHBoxLayout
-        self._choice_buttons: list[QPushButton] = []
+        # стоят в строку равными по ширине колонками (stretch=1), текст на кнопке
+        # переносится и растит её в высоту
+        self._choice_buttons: list[ChoiceButton] = []
         #: Текстовые ярлыки вариантов (для логики и тестов), даже когда на кнопке
         #: показана формула-картинка — там текст пустой.
         self._choice_labels: list[str] = [""] * MAX_CHOICES
         choices = QHBoxLayout()
         for index in range(MAX_CHOICES):
-            button = QPushButton()
+            button = ChoiceButton()
             button.setObjectName(f"choice_{index}")
-            button.setMinimumHeight(40)
             button.clicked.connect(
                 lambda _checked=False, i=index: self.answer_choice(i)
             )
             self._choice_buttons.append(button)
-            choices.addWidget(button)
+            choices.addWidget(button, 1)
         self._choices_box = QWidget()
         self._choices_box.setObjectName("choicesBox")
         self._choices_box.setLayout(choices)
@@ -116,19 +118,36 @@ class LearnView(QWidget):
         self._summary.setObjectName("summaryLabel")
         self._summary.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
+        # центральная часть (вопрос + варианты/ввод + вердикт) скроллится, если
+        # не влезает: длинный вопрос и переносящиеся варианты растут в высоту,
+        # а пользователь может прокрутить содержимое целиком
+        content = QWidget()
+        content.setObjectName("learnContent")
+        content_layout = QVBoxLayout(content)
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(GAP)
+        content_layout.addStretch(1)
+        content_layout.addWidget(self._prompt)
+        content_layout.addWidget(self._choices_box)
+        content_layout.addWidget(self._answer_edit)
+        content_layout.addWidget(self._submit_button)
+        content_layout.addWidget(self._verdict)
+        content_layout.addWidget(self._correct_answer)
+        content_layout.addWidget(self._summary)
+        content_layout.addStretch(1)
+
+        scroll = QScrollArea()
+        scroll.setObjectName("learnScroll")
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setWidget(content)
+
         layout = QVBoxLayout()
         layout.setContentsMargins(PAD, PAD, PAD, PAD)
         layout.setSpacing(GAP)
         layout.addWidget(header)
-        layout.addStretch(1)
-        layout.addWidget(self._prompt)
-        layout.addWidget(self._choices_box)
-        layout.addWidget(self._answer_edit)
-        layout.addWidget(self._submit_button)
-        layout.addWidget(self._verdict)
-        layout.addWidget(self._correct_answer)
-        layout.addWidget(self._summary)
-        layout.addStretch(1)
+        layout.addWidget(scroll, stretch=1)
         layout.addWidget(self._next_button)
         self.setLayout(layout)
 
@@ -284,10 +303,6 @@ class LearnView(QWidget):
                 if not has_option:
                     continue
                 option = question.options[index]
-                # face_preview, а не plain_text: у формул и картинок текст пустой,
-                # и такие варианты были бы неотличимы друг от друга
-                label = face_preview(option)
-                self._choice_labels[index] = label
                 latex = single_formula(option)
                 pixmap = (
                     formula_pixmap(latex, current_palette().text, CHOICE_FORMULA_HEIGHT)
@@ -295,12 +310,14 @@ class LearnView(QWidget):
                     else None
                 )
                 if pixmap is not None:
-                    # вариант-формулу показываем самой формулой, а не сырым LaTeX
-                    button.setText("")
-                    button.setIcon(QIcon(pixmap))
-                    button.setIconSize(pixmap.size())
+                    # вариант-формулу показываем самой формулой, а не сырым LaTeX;
+                    # ярлык [формула: ...] нужен логике/тестам (текст у формулы пуст)
+                    label = face_preview(option)
+                    button.set_formula(pixmap)
                 else:
-                    button.setIcon(QIcon())
-                    button.setText(label)
+                    # полный текст без обрезки — на кнопке он переносится
+                    label = option.plain_text or face_preview(option)
+                    button.set_text(label)
+                self._choice_labels[index] = label
         else:
             self._answer_edit.setFocus()

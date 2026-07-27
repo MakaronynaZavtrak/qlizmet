@@ -44,7 +44,10 @@ class FaceView(QWidget):
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(8)
-        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # AlignVCenter, а не AlignCenter: блоки центрируются по вертикали, но
+        # тянутся на всю ширину — иначе текст-метка получала бы узкую ширину по
+        # своему sizeHint и длинная строка обрезалась бы вместо переноса
+        layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         # layout намеренно не сохраняется в атрибут: ссылка на него из виджета
         # вместе с обратной ссылкой родителя образует цикл, на котором сборщик
         # мусора Python и PySide6 могут освободить объект дважды
@@ -97,7 +100,11 @@ class FaceView(QWidget):
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         if self._selectable:
             label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
+        # метка занимает всю ширину и растёт в высоту под перенесённый текст:
+        # Preferred по ширине с растяжением + учёт heightForWidth
+        policy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
+        policy.setHeightForWidth(True)
+        label.setSizePolicy(policy)
         return label
 
     def _latex_widget(self, block: LatexBlock) -> QLabel:

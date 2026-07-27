@@ -56,10 +56,10 @@ def test_learn_formula_option_shows_icon_not_text(qt_host) -> None:
     view = LearnView(parent=qt_host)
     view.start(cards, shuffle=False)
 
-    formula_buttons = [b for b in _visible_choices(view) if not b.icon().isNull()]
+    formula_buttons = [b for b in _visible_choices(view) if b.is_formula()]
     assert formula_buttons  # хотя бы один вариант нарисован формулой
     for button in formula_buttons:
-        assert button.text() == ""  # на кнопке-формуле текста нет
+        assert button.displayed_text() == ""  # на кнопке-формуле текста нет
 
     # но осмысленные подписи для логики/тестов сохраняются
     labels = view.choice_texts()
@@ -77,5 +77,5 @@ def test_learn_text_option_stays_text(qt_host) -> None:
         shuffle=False,
     )
     for button in _visible_choices(view):
-        assert button.icon().isNull()  # текстовые варианты — без иконки
-        assert button.text().strip()
+        assert not button.is_formula()  # текстовые варианты — без формулы
+        assert button.displayed_text().strip()
